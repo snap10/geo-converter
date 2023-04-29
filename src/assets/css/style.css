@@ -1,0 +1,11 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+#map {
+    width: calc(100% - 25%);
+}
+  
+  
+  
+  
+  
