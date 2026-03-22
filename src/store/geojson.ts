@@ -161,20 +161,24 @@ export const useGeojsonStore = defineStore("geojson", {
     async parseShapeToGeoJsonWithResult(fileContent: any): Promise<{ features: any[] } | null> {
       try {
         const geojson = await shp.parseZip(fileContent)
-        const uploadId = `upload_${++this.uploadCounter}`
         geojson.features.forEach(feature => {
           if (!feature.properties) {
             feature.properties = {}
           }
-          feature.properties.upload_id = uploadId
-          feature.properties.feature_id = `feature_${++this.featureIdCounter}`
         })
-        this.addFeatures(geojson.features)
         return geojson
       } catch (error) {
         console.error("Error parsing shapefile:", error)
         return null
       }
+    },
+
+    addShapeFeatures(features: any[], uploadId: string) {
+      features.forEach(feature => {
+        feature.properties.upload_id = uploadId
+        feature.properties.feature_id = `feature_${++this.featureIdCounter}`
+      })
+      this.addFeatures(features)
     },
     addFeatures(features: any[]) {
       // Assign a unique feature id to each feature if it doesn't have one

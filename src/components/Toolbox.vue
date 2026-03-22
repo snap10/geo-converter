@@ -249,6 +249,7 @@ const editingFeature = ref<any>(null)
 
 const showDeleteConfirm = ref(false)
 const uploadToDelete = ref<Upload | null>(null)
+const pendingFeatures = ref<{ features: any[]; uploadId: string } | null>(null)
 
 const currentDuplicate = computed(() => 
   store.pendingDuplicates.length > 0 ? store.pendingDuplicates[0] : null
@@ -274,9 +275,9 @@ const loadShapeZipFile = function() {
     const fileName = f.name
     const reader = new FileReader()
     reader.readAsArrayBuffer(f)
-    reader.onload = (event) => {
+    reader.onload = async (event) => {
       const fileContent = event?.target?.result
-      const geojson = store.parseShapeToGeoJsonWithResult(fileContent)
+      const geojson = await store.parseShapeToGeoJsonWithResult(fileContent)
       if (geojson && geojson.features) {
         const geoIds = extractGeoIds(geojson.features)
         const duplicateGeoIds = store.getDuplicateGeoIds(geoIds)
@@ -291,9 +292,13 @@ const loadShapeZipFile = function() {
               duplicateGeoIds,
               duplicateGeoIds
             )
+            pendingFeatures.value = { features: geojson.features, uploadId }
+          } else {
+            store.addShapeFeatures(geojson.features, uploadId)
           }
         } else {
-          store.addUpload(fileName, "shapefile", geojson.features.length, geoIds)
+          const uploadId = store.addUpload(fileName, "shapefile", geojson.features.length, geoIds)
+          store.addShapeFeatures(geojson.features, uploadId)
         }
       }
     }
@@ -310,9 +315,9 @@ const loadIsoXmlFile = function() {
   if (f) {
     const fileName = f.name
     const reader = new FileReader()
-    reader.onload = (event) => {
+    reader.onload = async (event) => {
       const fileContent = event?.target?.result
-      const geojson = isoxmlStore.parseAsGeoJsonWithResult(fileContent, f.type)
+      const geojson = await isoxmlStore.parseAsGeoJsonWithResult(fileContent, f.type)
       if (geojson && geojson.features) {
         const geoIds = extractGeoIds(geojson.features)
         const duplicateGeoIds = store.getDuplicateGeoIds(geoIds)
@@ -327,9 +332,14 @@ const loadIsoXmlFile = function() {
               duplicateGeoIds,
               duplicateGeoIds
             )
+            // Store features for later adding after resolution
+            pendingFeatures.value = { features: geojson.features, uploadId }
+          } else {
+            isoxmlStore.addIsoXmlFeatures(geojson.features, uploadId, store.featureIdCounter)
           }
         } else {
-          store.addUpload(fileName, "isoxml", geojson.features.length, geoIds)
+          const uploadId = store.addUpload(fileName, "isoxml", geojson.features.length, geoIds)
+          isoxmlStore.addIsoXmlFeatures(geojson.features, uploadId, store.featureIdCounter)
         }
       }
     }
@@ -365,7 +375,26 @@ const cancelDeleteUpload = () => {
 
 const handleDuplicateResolve = (action: "keep_existing" | "keep_new" | "keep_both") => {
   if (store.pendingDuplicates.length > 0) {
-    store.resolveDuplicate(0, action)
+    const duplicate = store.pendingDuplicates[0]
+    
+    if (action === "keep_existing") {
+      // Remove new upload but don't add new features
+      store.removeUpload(duplicate.newUpload.id)
+    } else if (action === "keep_new") {
+      // Remove existing, add new features
+      store.removeUpload(duplicate.existingUpload.id)
+      if (pendingFeatures.value) {
+        isoxmlStore.addIsoXmlFeatures(pendingFeatures.value.features, pendingFeatures.value.uploadId, store.featureIdCounter)
+      }
+    } else if (action === "keep_both") {
+      // Add new features (with renamed IDs handled elsewhere)
+      if (pendingFeatures.value) {
+        isoxmlStore.addIsoXmlFeatures(pendingFeatures.value.features, pendingFeatures.value.uploadId, store.featureIdCounter)
+      }
+    }
+    
+    store.pendingDuplicates = []
+    pendingFeatures.value = null
   }
 }
 

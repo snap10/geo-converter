@@ -132,7 +132,6 @@ export const useIsoXmlStore = defineStore("isoxml", {
     },
 
     async parseAsGeoJsonWithResult(content: Uint8Array | string, type: string) {
-      const geojsonStore = useGeojsonStore()
       const isoxml = await getIsoxmlModule()
       const taskManager = new isoxml.ISOXMLManager()
       await taskManager.parseISOXMLFile(content, type as any)
@@ -141,8 +140,6 @@ export const useIsoXmlStore = defineStore("isoxml", {
 
       const customers = taskManager.rootElement.attributes.Customer || []
       const farms = taskManager.rootElement.attributes.Farm || []
-
-      const uploadId = `upload_${++geojsonStore.uploadCounter}`
 
       for (const field of partfields) {
         const feature = { type: "Feature" }
@@ -165,8 +162,6 @@ export const useIsoXmlStore = defineStore("isoxml", {
         }
 
         feature.properties = {
-          upload_id: uploadId,
-          feature_id: `feature_${++geojsonStore.featureIdCounter}`,
           geo_id: field.attributes?.PartfieldCode,
           partfieldDesignator: field.attributes?.PartfieldDesignator,
           partfieldArea: field.attributes?.PartfieldArea ? parseFloat(field.attributes.PartfieldArea) / 10000 : undefined,
@@ -178,8 +173,19 @@ export const useIsoXmlStore = defineStore("isoxml", {
         featureCollection.features.push(feature)
       }
 
-      geojsonStore.addFeatures(featureCollection.features)
       return featureCollection
+    },
+
+    addIsoXmlFeatures(features: any[], uploadId: string, startFeatureId: number) {
+      const geojsonStore = useGeojsonStore()
+      features.forEach(feature => {
+        if (!feature.properties) {
+          feature.properties = {}
+        }
+        feature.properties.upload_id = uploadId
+        feature.properties.feature_id = `feature_${++startFeatureId}`
+      })
+      geojsonStore.addFeatures(features)
     },
   },
 })
