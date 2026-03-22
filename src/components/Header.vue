@@ -14,6 +14,9 @@
         <button class="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-full shadow disabled:opacity-50 disabled:cursor-not-allowed" :disabled="!geojson?.features?.length" @click="openIsoxmlDialog()">
           ISOXML-Taskdata herunterladen
         </button>
+        <button class="bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-full shadow disabled:opacity-50 disabled:cursor-not-allowed" :disabled="!geojson?.features?.length" @click="openGeojsonDialog()">
+          GeoJSON herunterladen
+        </button>
       </div>
     </header>
     <div class="flex-1 overflow-hidden min-h-0">
@@ -39,6 +42,12 @@
       @confirm="confirmIsoxmlDownload"
       @cancel="showIsoxmlDialog = false"
     />
+    <GeoJsonExportDialog
+      :is-open="showGeojsonDialog"
+      :feature-count="downloadCount"
+      @export="handleGeojsonExport"
+      @cancel="showGeojsonDialog = false"
+    />
   </div>
 </template>
 <script setup lang="ts">
@@ -46,11 +55,13 @@ import { ref, computed } from "vue"
 import { useGeojsonStore } from "@/store/geojson"
 import { useIsoXmlStore } from "@/store/isoxml"
 import DownloadConfirmDialog from "./DownloadConfirmDialog.vue"
+import GeoJsonExportDialog from "./GeoJsonExportDialog.vue"
 
 const geojsonStore = useGeojsonStore()
 const { geojson } = toRefs(geojsonStore)
 
 const showIsoxmlDialog = ref(false)
+const showGeojsonDialog = ref(false)
 
 const downloadCount = computed(() => {
   if (geojsonStore.selectedCount > 0) {
@@ -71,6 +82,52 @@ const confirmIsoxmlDownload = async function() {
   const link = document.createElement("a")
   link.href = url
   link.download = "TaskData.zip"
+  link.click()
+  URL.revokeObjectURL(url)
+}
+
+const openGeojsonDialog = function() {
+  showGeojsonDialog.value = true
+}
+
+interface PropertyMapping {
+  source: string
+  target: string
+}
+
+const handleGeojsonExport = function(mappings: PropertyMapping[]) {
+  showGeojsonDialog.value = false
+  
+  const features = geojsonStore.selectedCount > 0 
+    ? geojsonStore.selectedFeatures 
+    : geojson.value.features
+  
+  const transformedFeatures = features.map(feature => {
+    const transformed: any = {
+      type: feature.type,
+      geometry: feature.geometry,
+      properties: {}
+    }
+    
+    mappings.forEach(mapping => {
+      if (mapping.source && mapping.target && feature.properties) {
+        transformed.properties[mapping.target] = feature.properties[mapping.source]
+      }
+    })
+    
+    return transformed
+  })
+  
+  const geojson = {
+    type: "FeatureCollection",
+    features: transformedFeatures
+  }
+  
+  const blob = new Blob([JSON.stringify(geojson, null, 2)], { type: "application/json" })
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement("a")
+  link.href = url
+  link.download = "export.geojson"
   link.click()
   URL.revokeObjectURL(url)
 }
