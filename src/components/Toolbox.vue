@@ -51,6 +51,51 @@
         </label>
       </form>
     </div>
+    <div v-if="store.uploads.length > 0" class="mt-4">
+      <h4 class="font-bold mb-2">
+        Hochgeladene Dateien
+      </h4>
+      <ul class="space-y-2">
+        <li
+          v-for="upload in store.uploads"
+          :key="upload.id"
+          class="flex items-center justify-between bg-white rounded-lg px-3 py-2 shadow-sm"
+        >
+          <div class="flex items-center gap-2 overflow-hidden">
+            <span
+              class="w-3 h-3 rounded-full flex-shrink-0"
+              :style="{ backgroundColor: upload.type === 'shapefile' ? '#3498db' : '#2ecc71' }"
+            ></span>
+            <span class="text-sm truncate" :title="upload.name">{{ upload.name }}</span>
+            <span class="text-xs text-gray-500">({{ upload.featureCount }})</span>
+          </div>
+          <button
+            type="button"
+            class="flex-shrink-0 text-red-500 hover:text-red-700 text-xs px-2 py-1"
+            @click="confirmDeleteUpload(upload)"
+          >
+            ✕
+          </button>
+        </li>
+      </ul>
+    </div>
+    <confirm-dialog
+      v-if="uploadToDelete"
+      :is-open="showDeleteConfirm"
+      :title="'Datei löschen'"
+      :message="`Möchten Sie '${uploadToDelete.name}' wirklich löschen? ${uploadToDelete.featureCount} Feld(er) werden entfernt.`"
+      confirm-text="Löschen"
+      cancel-text="Abbrechen"
+      :danger="true"
+      @confirm="handleDeleteUpload"
+      @cancel="cancelDeleteUpload"
+    />
+    <farm-duplicate-dialog
+      :is-open="showDuplicateDialog"
+      :duplicate="currentDuplicate"
+      @resolve="handleDuplicateResolve"
+      @cancel="handleDuplicateCancel"
+    />
     <div>
       <div class="flex items-center justify-between mb-4">
         <h4 class="text-xl font-bold">
@@ -186,10 +231,13 @@
 </template>
 
 <script setup lang="ts">
+import { ref, computed } from "vue"
+import FeatureEditDialog from "./FeatureEditDialog.vue"
+import FarmDuplicateDialog from "./FarmDuplicateDialog.vue"
+import ConfirmDialog from "./ConfirmDialog.vue"
+import type { Upload } from "@/store/geojson"
 import { useGeojsonStore } from "@/store/geojson"
 import { useIsoXmlStore } from "@/store/isoxml"
-import { ref } from "vue"
-import FeatureEditDialog from "./FeatureEditDialog.vue"
 
 const shapeFileInput = ref(null)
 const store = useGeojsonStore()
@@ -198,16 +246,63 @@ const showFarmDropdown = ref(false)
 const showEditDialog = ref(false)
 const editingFeature = ref<any>(null)
 
+const showDeleteConfirm = ref(false)
+const uploadToDelete = ref<Upload | null>(null)
+
+const currentDuplicate = computed(() => 
+  store.pendingDuplicates.length > 0 ? store.pendingDuplicates[0] : null
+)
+const showDuplicateDialog = computed(() => store.hasPendingDuplicates())
+
+const extractGeoIds = (features: any[]): string[] => {
+  const geoIds = new Set<string>()
+  features.forEach(feature => {
+    const geoId = feature.properties?.geo_id
+    if (geoId) {
+      geoIds.add(geoId)
+    }
+  })
+  return Array.from(geoIds)
+}
+
 const loadShapeZipFile = function() {
   console.log("fileInput", shapeFileInput)
   const f = shapeFileInput?.value?.files[0]
   console.log("file", f)
   if (f) {
+    const fileName = f.name
     const reader = new FileReader()
     reader.readAsArrayBuffer(f)
-    reader.onload = function(event) {
+    reader.onload = (event) => {
       const fileContent = event?.target?.result
-      store.parseShapeToGeoJson(fileContent)
+      const geojson = store.parseShapeToGeoJsonWithResult(fileContent)
+      if (geojson) {
+        const geoIds = extractGeoIds(geojson.features)
+        const duplicateGeoIds = store.getDuplicateFarmIds(geoIds)
+        
+        if (duplicateGeoIds.length > 0 && store.uploads.length > 0) {
+          const existingUploads = store.uploads
+          const newUpload: Upload = {
+            id: `upload_temp_${Date.now()}`,
+            name: fileName,
+            type: "shapefile",
+            featureCount: geojson.features.length,
+            farmIds: geoIds,
+            timestamp: new Date()
+          }
+          const existingGeoIds = geoIds.filter(id => 
+            existingUploads.some(u => u.farmIds.includes(id))
+          )
+          store.addPendingDuplicate(
+            existingUploads.find(u => u.farmIds.some(fid => duplicateGeoIds.includes(fid)))!,
+            newUpload,
+            existingGeoIds,
+            duplicateGeoIds
+          )
+        } else {
+          store.addUpload(fileName, "shapefile", geojson.features.length, geoIds)
+        }
+      }
     }
   } else {
     console.error("No file found", f)
@@ -220,10 +315,38 @@ const loadIsoXmlFile = function() {
   const f = isoxmlFileInput?.value?.files[0]
   console.log("file", f)
   if (f) {
+    const fileName = f.name
     const reader = new FileReader()
-    reader.onload = function(event) {
+    reader.onload = (event) => {
       const fileContent = event?.target?.result
-      isoxmlStore.parseAsGeoJson(fileContent, f.type)
+      const geojson = isoxmlStore.parseAsGeoJsonWithResult(fileContent, f.type)
+      if (geojson) {
+        const geoIds = extractGeoIds(geojson.features)
+        const duplicateGeoIds = store.getDuplicateFarmIds(geoIds)
+        
+        if (duplicateGeoIds.length > 0 && store.uploads.length > 0) {
+          const existingUploads = store.uploads
+          const newUpload: Upload = {
+            id: `upload_temp_${Date.now()}`,
+            name: fileName,
+            type: "isoxml",
+            featureCount: geojson.features.length,
+            farmIds: geoIds,
+            timestamp: new Date()
+          }
+          const existingGeoIds = geoIds.filter(id => 
+            existingUploads.some(u => u.farmIds.includes(id))
+          )
+          store.addPendingDuplicate(
+            existingUploads.find(u => u.farmIds.some(fid => duplicateGeoIds.includes(fid)))!,
+            newUpload,
+            existingGeoIds,
+            duplicateGeoIds
+          )
+        } else {
+          store.addUpload(fileName, "isoxml", geojson.features.length, geoIds)
+        }
+      }
     }
     if (f.type?.toLowerCase().includes("zip")) {
       console.log("reading as buffer")
@@ -235,6 +358,34 @@ const loadIsoXmlFile = function() {
   } else {
     console.error("No file found", f)
   }
+}
+
+const confirmDeleteUpload = (upload: Upload) => {
+  uploadToDelete.value = upload
+  showDeleteConfirm.value = true
+}
+
+const handleDeleteUpload = () => {
+  if (uploadToDelete.value) {
+    store.removeUpload(uploadToDelete.value.id)
+  }
+  showDeleteConfirm.value = false
+  uploadToDelete.value = null
+}
+
+const cancelDeleteUpload = () => {
+  showDeleteConfirm.value = false
+  uploadToDelete.value = null
+}
+
+const handleDuplicateResolve = (action: "keep_existing" | "keep_new" | "keep_both") => {
+  if (store.pendingDuplicates.length > 0) {
+    store.resolveDuplicate(0, action)
+  }
+}
+
+const handleDuplicateCancel = () => {
+  store.pendingDuplicates = []
 }
 
 function getColorFromString(str: string): string {

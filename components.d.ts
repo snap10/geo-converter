@@ -9,7 +9,9 @@ export {}
 
 declare module '@vue/runtime-core' {
   export interface GlobalComponents {
+    ConfirmDialog: typeof import('./src/components/ConfirmDialog.vue')['default']
     DownloadConfirmDialog: typeof import('./src/components/DownloadConfirmDialog.vue')['default']
+    FarmDuplicateDialog: typeof import('./src/components/FarmDuplicateDialog.vue')['default']
     FeatureEditDialog: typeof import('./src/components/FeatureEditDialog.vue')['default']
     FileUploadPopup: typeof import('./src/components/FileUploadPopup.vue')['default']
     GeoJsonExportDialog: typeof import('./src/components/GeoJsonExportDialog.vue')['default']
