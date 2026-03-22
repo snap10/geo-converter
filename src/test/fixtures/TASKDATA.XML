@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ISO11783_TaskData VersionMajor="4" VersionMinor="3" ManagementSoftwareManufacturer="FMIS" ManagementSoftwareVersion="1.0" DataTransferOrigin="1">
+  <CTR A="CTR1" B="Test Customer 1"></CTR>
+  <CTR A="CTR2" B="Test Customer 2"></CTR>
+  <FRM A="FRM1" B="Test Farm 1"></FRM>
+  <FRM A="FRM2" B="Test Farm 2"></FRM>
+  <PFD F="FRM2" E="CTR2" D="5200" C="Test Field Alpha" B="CODE-A" A="PFD-1">
+    <PLN A="1">
+      <LSG A="1">
+        <PNT D="9.855" C="48.152" A="2"></PNT>
+        <PNT D="9.856" C="48.152" A="2"></PNT>
+        <PNT D="9.856" C="48.153" A="2"></PNT>
+        <PNT D="9.855" C="48.153" A="2"></PNT>
+        <PNT D="9.855" C="48.152" A="2"></PNT>
+      </LSG>
+    </PLN>
+  </PFD>
+  <PFD A="PFD-2" C="Test Field Beta" B="CODE-B" D="3800" F="FRM1" E="CTR1">
+    <PLN A="1">
+      <LSG A="1">
+        <PNT A="2" C="48.148" D="9.840"></PNT>
+        <PNT A="2" C="48.149" D="9.841"></PNT>
+        <PNT A="2" C="48.148" D="9.841"></PNT>
+        <PNT A="2" C="48.148" D="9.840"></PNT>
+      </LSG>
+    </PLN>
+  </PFD>
+  <PFD A="PFD-3" C="Test Field Gamma" B="CODE-C" D="1320" F="FRM1" E="CTR2">
+    <PLN A="1">
+      <LSG A="1">
+        <PNT A="2" C="48.144" D="9.842"></PNT>
+        <PNT A="2" C="48.145" D="9.844"></PNT>
+        <PNT A="2" C="48.144" D="9.844"></PNT>
+        <PNT A="2" C="48.144" D="9.842"></PNT>
+      </LSG>
+    </PLN>
+  </PFD>
+</ISO11783_TaskData>

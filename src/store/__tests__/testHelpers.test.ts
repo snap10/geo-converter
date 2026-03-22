@@ -20,11 +20,11 @@ describe("testHelpers", () => {
 
     it("should override default values", () => {
       const feature = createTestFeature({
-        properties: { bez: "Test Field", flaeche_ha: 1.5 }
+        properties: { partfieldDesignator: "Test Field", partfieldArea: 1.5 }
       })
       
-      expect(feature.properties.bez).toBe("Test Field")
-      expect(feature.properties.flaeche_ha).toBe(1.5)
+      expect(feature.properties.partfieldDesignator).toBe("Test Field")
+      expect(feature.properties.partfieldArea).toBe(1.5)
     })
   })
 
@@ -48,22 +48,22 @@ describe("testHelpers", () => {
   describe("createPolygonFeature", () => {
     it("should create a Polygon feature", () => {
       const coords = [[0, 0], [1, 0], [1, 1], [0, 1], [0, 0]]
-      const properties = { bez: "Test" }
+      const properties = { partfieldDesignator: "Test" }
       const feature = createPolygonFeature(coords, properties)
       
       expect(feature.geometry.type).toBe("Polygon")
-      expect(feature.properties.bez).toBe("Test")
+      expect(feature.properties.partfieldDesignator).toBe("Test")
     })
   })
 
   describe("createMultiPolygonFeature", () => {
     it("should create a MultiPolygon feature", () => {
       const coords = [[[[0, 0], [1, 0], [1, 1], [0, 1], [0, 0]]]]
-      const properties = { bez: "MultiTest" }
+      const properties = { partfieldDesignator: "MultiTest" }
       const feature = createMultiPolygonFeature(coords, properties)
       
       expect(feature.geometry.type).toBe("MultiPolygon")
-      expect(feature.properties.bez).toBe("MultiTest")
+      expect(feature.properties.partfieldDesignator).toBe("MultiTest")
     })
   })
 
@@ -83,32 +83,32 @@ describe("testHelpers", () => {
   })
 
   describe("anonymizeProperties", () => {
-    it("should anonymize kunde field", () => {
-      const props = { kunde: "CTR1" }
+    it("should anonymize customerId field", () => {
+      const props = { customerId: "CTR1" }
       const anonymized = anonymizeProperties(props)
       
-      expect(anonymized.kunde).toMatch(/^CTR_ANON_/)
+      expect(anonymized.customerId).toMatch(/^CTR_ANON_/)
     })
 
-    it("should anonymize kundenName field", () => {
-      const props = { kundenName: "Max Mustermann" }
+    it("should anonymize customerName field", () => {
+      const props = { customerName: "John Doe" }
       const anonymized = anonymizeProperties(props)
       
-      expect(anonymized.kundenName).toMatch(/^Anonymer Kunde/)
+      expect(anonymized.customerName).toMatch(/^Anonymous Customer/)
     })
 
-    it("should anonymize betrieb field", () => {
-      const props = { betrieb: "FRM1" }
+    it("should anonymize farmId field", () => {
+      const props = { farmId: "FRM1" }
       const anonymized = anonymizeProperties(props)
       
-      expect(anonymized.betrieb).toMatch(/^FRM_ANON_/)
+      expect(anonymized.farmId).toMatch(/^FRM_ANON_/)
     })
 
-    it("should anonymize betriebName field", () => {
-      const props = { betriebName: "Musterhof" }
+    it("should anonymize farmName field", () => {
+      const props = { farmName: "Test Farm" }
       const anonymized = anonymizeProperties(props)
       
-      expect(anonymized.betriebName).toMatch(/^Anonymer Betrieb/)
+      expect(anonymized.farmName).toMatch(/^Anonymous Farm/)
     })
 
     it("should anonymize geo_id field", () => {

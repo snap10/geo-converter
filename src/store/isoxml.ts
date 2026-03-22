@@ -38,10 +38,10 @@ export const useIsoXmlStore = defineStore("isoxml", {
           const partfieldCode = geoIdStr.substring(0, 32)
 
           // PartfieldDesignator: max 32 chars
-          const partfieldDesignator = (feature.properties?.bez || "").substring(0, 32)
+          const partfieldDesignator = (feature.properties?.partfieldDesignator || feature.properties?.bez || "").substring(0, 32)
 
-          // PartfieldArea: in m² (flaeche_ha is in hectares, multiply by 10000)
-          const areaHa = parseFloat(feature.properties?.flaeche_ha) || 0
+          // PartfieldArea: in m² (partfieldArea is in hectares, multiply by 10000)
+          const areaHa = parseFloat(feature.properties?.partfieldArea || feature.properties?.flaeche_ha) || 0
           const areaM2 = Math.round(areaHa * 10000)
 
           // create a Partfield

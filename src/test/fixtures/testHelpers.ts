@@ -51,17 +51,17 @@ export function randomizeCoordinates(coords: number[][], offset: number = 0.01):
 export function anonymizeProperties(properties: Record<string, any>): Record<string, any> {
   const anonymized = { ...properties }
   
-  if (anonymized.kunde) {
-    anonymized.kunde = `CTR_ANON_${Math.random().toString(36).substring(7).toUpperCase()}`
+  if (anonymized.customerId) {
+    anonymized.customerId = `CTR_ANON_${Math.random().toString(36).substring(7).toUpperCase()}`
   }
-  if (anonymized.kundenName) {
-    anonymized.kundenName = `Anonymer Kunde ${Math.floor(Math.random() * 1000)}`
+  if (anonymized.customerName) {
+    anonymized.customerName = `Anonymous Customer ${Math.floor(Math.random() * 1000)}`
   }
-  if (anonymized.betrieb) {
-    anonymized.betrieb = `FRM_ANON_${Math.random().toString(36).substring(7).toUpperCase()}`
+  if (anonymized.farmId) {
+    anonymized.farmId = `FRM_ANON_${Math.random().toString(36).substring(7).toUpperCase()}`
   }
-  if (anonymized.betriebName) {
-    anonymized.betriebName = `Anonymer Betrieb ${Math.floor(Math.random() * 1000)}`
+  if (anonymized.farmName) {
+    anonymized.farmName = `Anonymous Farm ${Math.floor(Math.random() * 1000)}`
   }
   if (anonymized.geo_id) {
     anonymized.geo_id = `test-${Math.random().toString(36).substring(7)}-${Math.random().toString(36).substring(7)}`

@@ -51,9 +51,9 @@ function zoomToFeature(feature: any) {
   map.fitBounds(bounds, { padding: [50, 50] })
 
   // Show popup for this feature (simplified - in practice you'd find the exact layer)
-  if (feature.properties.bez) {
+  if (feature.properties.partfieldDesignator) {
     // Create a popup content
-    const popupContent = `Name: ${feature.properties.bez}</br>Fläche: ${feature.properties.flaeche_ha} ha</br>Betrieb: ${feature.properties.betriebName || feature.properties.betrieb || feature.properties.ud_id}`
+    const popupContent = `Name: ${feature.properties.partfieldDesignator}</br>Area: ${feature.properties.partfieldArea} ha</br>Farm: ${feature.properties.farmName || feature.properties.farmId || feature.properties.ud_id}`
 
     // Open a popup at the center of the bounds
     const center = bounds.getCenter()
@@ -122,8 +122,8 @@ const data = ref({
   options: {
     onEachFeature: function onEachFeature(feature, layer) {
       // does this feature have a property named popupContent?
-      if (feature.properties.bez) {
-        layer.bindPopup(`Name: ${feature.properties.bez}</br>Fläche: ${feature.properties.flaeche_ha} ha</br>Betrieb: ${feature.properties.betriebName || feature.properties.betrieb || feature.properties.ud_id}`)
+      if (feature.properties.partfieldDesignator) {
+        layer.bindPopup(`Name: ${feature.properties.partfieldDesignator}</br>Area: ${feature.properties.partfieldArea} ha</br>Farm: ${feature.properties.farmName || feature.properties.farmId || feature.properties.ud_id}`)
       }
 
       // Apply dynamic styling
@@ -138,17 +138,17 @@ const data = ref({
       } else if (feature.properties) {
         // Fallback to operation-based coloring if upload_id is not available
         // Color based on operation type
-        if (feature.properties.betrieb) {
-          fillColor = getOperationColor(feature.properties.betrieb)
+        if (feature.properties.farmId) {
+          fillColor = getOperationColor(feature.properties.farmId)
         }
 
         // Border color based on area
-        if (feature.properties.flaeche_ha) {
-          const area = parseFloat(feature.properties.flaeche_ha)
+        if (feature.properties.partfieldArea) {
+          const area = parseFloat(feature.properties.partfieldArea)
           color = getBorderColorFromArea(area)
         }
 
-        console.log("Styling feature with operation:", feature.properties.betrieb, "fillColor:", fillColor, "color:", color)
+        console.log("Styling feature with operation:", feature.properties.farmId, "fillColor:", fillColor, "color:", color)
       } else {
         console.log("Styling feature with no properties, using defaults")
       }

@@ -34,7 +34,7 @@ describe("useMapStore", () => {
     store.zoomToFeature({
       type: "Feature",
       geometry: { type: "Polygon", coordinates: [[[0, 0], [1, 0], [1, 1], [0, 1], [0, 0]]] },
-      properties: { bez: "Test Field" }
+      properties: { partfieldDesignator: "Test Field" }
     })
 
     expect(consoleSpy).toHaveBeenCalledWith("Map store: No map available")
@@ -48,7 +48,7 @@ describe("useMapStore", () => {
     const feature = {
       type: "Feature",
       geometry: { type: "Point", coordinates: [0, 0] },
-      properties: { bez: "Test Point" }
+      properties: { partfieldDesignator: "Test Point" }
     }
 
     store.zoomToFeature(feature)
@@ -66,7 +66,7 @@ describe("useMapStore", () => {
         type: "Polygon",
         coordinates: [[[9.855, 48.151], [9.856, 48.151], [9.856, 48.152], [9.855, 48.152], [9.855, 48.151]]]
       },
-      properties: { bez: "Small Field" }
+      properties: { partfieldDesignator: "Small Field" }
     }
 
     store.zoomToFeature(smallFeature)
@@ -86,7 +86,7 @@ describe("useMapStore", () => {
         type: "Polygon",
         coordinates: [[[9.8, 48.1], [9.9, 48.1], [9.9, 48.2], [9.8, 48.2], [9.8, 48.1]]]
       },
-      properties: { bez: "Medium Field" }
+      properties: { partfieldDesignator: "Medium Field" }
     }
 
     store.zoomToFeature(mediumFeature)
@@ -106,7 +106,7 @@ describe("useMapStore", () => {
         type: "Polygon",
         coordinates: [[[9.5, 48.0], [10.0, 48.0], [10.0, 48.5], [9.5, 48.5], [9.5, 48.0]]]
       },
-      properties: { bez: "Large Field" }
+      properties: { partfieldDesignator: "Large Field" }
     }
 
     store.zoomToFeature(largeFeature)
@@ -127,9 +127,9 @@ describe("useMapStore", () => {
         coordinates: [[[9.8, 48.1], [9.9, 48.1], [9.9, 48.2], [9.8, 48.2], [9.8, 48.1]]]
       },
       properties: { 
-        bez: "Test Field",
-        flaeche_ha: 1.5,
-        betriebName: "Farm A"
+        partfieldDesignator: "Test Field",
+        partfieldArea: 1.5,
+        farmName: "Farm A"
       }
     }
 
@@ -154,7 +154,7 @@ describe("useMapStore", () => {
           [[[1, 1], [2, 1], [2, 2], [1, 2], [1, 1]]]
         ]
       },
-      properties: { bez: "Multi Polygon Field" }
+      properties: { partfieldDesignator: "Multi Polygon Field" }
     }
 
     store.zoomToFeature(multiPolygonFeature)

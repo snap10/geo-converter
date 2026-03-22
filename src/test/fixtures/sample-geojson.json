@@ -20,12 +20,12 @@
       },
       "properties": {
         "geo_id": "test-0001-0001-0001-001",
-        "bez": "Testfeld Alpha",
-        "flaeche_ha": 0.52,
-        "kunde": "CTR_TEST_001",
-        "kundenName": "Testkunde",
-        "betrieb": "FRM_TEST_01",
-        "betriebName": "Testbetrieb",
+        "partfieldDesignator": "Test Field Alpha",
+        "partfieldArea": 0.52,
+        "customerId": "CTR_TEST_001",
+        "customerName": "Test Customer",
+        "farmId": "FRM_TEST_01",
+        "farmName": "Test Farm",
         "feature_id": "feature_test_1"
       }
     },
@@ -72,12 +72,12 @@
       },
       "properties": {
         "geo_id": "test-0002-0002-0002-002",
-        "bez": "Testfeld Beta",
-        "flaeche_ha": 3.79,
-        "kunde": "CTR_TEST_002",
-        "kundenName": "Anderer Testkunde",
-        "betrieb": "FRM_TEST_02",
-        "betriebName": "Anderer Testbetrieb",
+        "partfieldDesignator": "Test Field Beta",
+        "partfieldArea": 3.79,
+        "customerId": "CTR_TEST_002",
+        "customerName": "Another Test Customer",
+        "farmId": "FRM_TEST_02",
+        "farmName": "Another Test Farm",
         "feature_id": "feature_test_2"
       }
     },
@@ -108,12 +108,12 @@
       },
       "properties": {
         "geo_id": "test-0003-0003-0003-003",
-        "bez": "Testfeld Gamma",
-        "flaeche_ha": 1.32,
-        "kunde": "CTR_TEST_001",
-        "kundenName": "Testkunde",
-        "betrieb": "FRM_TEST_01",
-        "betriebName": "Testbetrieb",
+        "partfieldDesignator": "Test Field Gamma",
+        "partfieldArea": 1.32,
+        "customerId": "CTR_TEST_001",
+        "customerName": "Test Customer",
+        "farmId": "FRM_TEST_01",
+        "farmName": "Test Farm",
         "feature_id": "feature_test_3"
       }
     }

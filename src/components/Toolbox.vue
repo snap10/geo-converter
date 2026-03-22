@@ -88,7 +88,7 @@
 <tr 
    v-for="(feature, index) in store.geojson.features" 
    :key="index"
-   @click="console.log('Toolbox row clicked:', feature.properties.bez); zoomToFeature(feature)"
+    @click="console.log('Toolbox row clicked:', feature.properties.partfieldDesignator); zoomToFeature(feature)"
    class="cursor-pointer hover:bg-gray-100"
 >
               <td class="px-6 py-4 whitespace-nowrap">
@@ -102,9 +102,9 @@
                     :style="{ backgroundColor: getColorFromString(feature.properties.upload_id), border: '1px solid ' + getContrastColor(getColorFromString(feature.properties.upload_id)) }"
                   ></div>
                   <div 
-                    v-else-if="feature.properties.betrieb"
+                    v-else-if="feature.properties.farmId"
                     class="w-3 h-3 rounded-full" 
-                    :style="{ backgroundColor: getOperationColor(feature.properties.betrieb), border: '1px solid #000000' }"
+                    :style="{ backgroundColor: getOperationColor(feature.properties.farmId), border: '1px solid #000000' }"
                   ></div>
                   <div 
                     v-else
@@ -114,13 +114,13 @@
                 </div>
               </td>
               <td class="px-6 py-4 whitespace-nowrap">
-                {{ feature.properties.bez }}
+                {{ feature.properties.partfieldDesignator }}
               </td>
               <td class="px-6 py-4 whitespace-nowrap">
-                {{ feature.properties.flaeche_ha }}
+                {{ feature.properties.partfieldArea }}
               </td>
               <td class="px-6 py-4 whitespace-nowrap">
-                {{ feature.properties.betriebName || feature.properties.betrieb || feature.properties.ud_id }}
+                {{ feature.properties.farmName || feature.properties.farmId || feature.properties.ud_id }}
               </td>
             </tr>
           </tbody>
@@ -221,7 +221,7 @@ function getOperationColor(operation: string | undefined): string {
 
 // Emit an event to zoom to a feature (will be handled by parent component)
 const zoomToFeature = (feature: any) => {
-  console.log("Toolbox: Clicked on feature:", feature.properties.bez || feature.properties.feature_id)
+  console.log("Toolbox: Clicked on feature:", feature.properties.partfieldDesignator || feature.properties.feature_id)
   // Emit custom event that parent can listen to
   const event = new CustomEvent('zoom-to-feature', { 
     detail: { feature } 

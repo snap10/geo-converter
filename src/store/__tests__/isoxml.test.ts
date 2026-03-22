@@ -100,11 +100,11 @@ describe("useIsoXmlStore - Round Trip", () => {
     expect(pfdMatch![0]).toContain("F=\"FRM1\"")
   })
 
-  it("should parse real TASKDATA.XML file correctly", async () => {
+  it("should parse fixture TASKDATA.XML file correctly", async () => {
     const geojsonStore = useGeojsonStore()
     const isoxmlStore = useIsoXmlStore()
     
-    const xmlPath = path.join(__dirname, "../../../../2026_fields/Validation/TASKDATA.XML")
+    const xmlPath = path.join(__dirname, "../../test/fixtures/TASKDATA.XML")
     const testIsoXml = fs.readFileSync(xmlPath, "utf-8")
     
     await isoxmlStore.parseAsGeoJson(testIsoXml, "application/xml")
@@ -112,6 +112,8 @@ describe("useIsoXmlStore - Round Trip", () => {
     expect(geojsonStore.geojson.features.length).toBeGreaterThan(0)
     
     const firstFeature = geojsonStore.geojson.features[0]
+    expect(firstFeature.properties.partfieldDesignator).toBeDefined()
+    expect(firstFeature.properties.partfieldArea).toBeDefined()
     expect(firstFeature.properties.customerId).toBeDefined()
     expect(firstFeature.properties.farmId).toBeDefined()
     
