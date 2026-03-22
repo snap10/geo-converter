@@ -113,7 +113,7 @@ function getOrCreateCustomerXmlRef(taskManager: any, name: string | undefined): 
     return taskManager.getReferenceByEntity(customer)
   }
   // CustomerId pattern: (CTR|CTR-)([0-9])+, max 14 chars
-  const customerId = `CTR-${taskManager.rootElement.attributes.Customer?.length || 1}`
+  const customerId = `CTR${taskManager.rootElement.attributes.Customer?.length || 1}`
   const entity = taskManager.createEntityFromAttributes(isoxmlModule?.TAGS.Customer, {
     CustomerId: customerId,
     CustomerLastName: customerName,
@@ -129,7 +129,7 @@ function getOrCreateFarmXmlRef(taskManager: any, name: string | undefined): any 
     return taskManager.getReferenceByEntity(farm)
   }
   // FarmId pattern: (FRM|FRM-)([0-9])+, max 14 chars
-  const farmId = `FRM-${taskManager.rootElement.attributes.Farm?.length || 1}`
+  const farmId = `FRM${taskManager.rootElement.attributes.Farm?.length || 1}`
   const entity = taskManager.createEntityFromAttributes(isoxmlModule?.TAGS.Farm, {
     FarmId: farmId,
     FarmDesignator: farmName,
