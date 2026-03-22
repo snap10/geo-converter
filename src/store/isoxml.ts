@@ -83,19 +83,31 @@ export const useIsoXmlStore = defineStore("isoxml", {
       const partfields = taskManager.rootElement.attributes.Partfield
       const featureCollection = { type: "FeatureCollection", features: [] }
 
+      const customers = taskManager.rootElement.attributes.Customer || []
+      const farms = taskManager.rootElement.attributes.Farm || []
+      
       for (const field of partfields) {
         const feature = { type: "Feature" }
         const geometry = field.toGeoJSON?.()
         feature.geometry = geometry
         
+        const customerRef = field.attributes.CustomerIdRef
+        const farmRef = field.attributes.FarmIdRef
+        
+        const customerEntity = customerRef?.entity || customers.find(c => c.attributes.CustomerId === customerRef?.xmlId)
+        const farmEntity = farmRef?.entity || farms.find(f => f.attributes.FarmId === farmRef?.xmlId)
+        
+        const customerName = customerEntity?.attributes?.CustomerLastName || customerEntity?.attributes?.CustomerName || customerRef?.xmlId
+        const farmName = farmEntity?.attributes?.FarmDesignator || farmEntity?.attributes?.FarmName || farmRef?.xmlId
+        
         feature.properties = {
           geo_id: field.attributes?.PartfieldCode,
           partfieldDesignator: field.attributes?.PartfieldDesignator,
           partfieldArea: field.attributes?.PartfieldArea ? parseFloat(field.attributes.PartfieldArea) / 10000 : undefined,
-          customerId: field.attributes.CustomerIdRef?.xmlId,
-          customerName: field.attributes.CustomerIdRef?.entity?.attributes?.CustomerLastName,
-          farmId: field.attributes.FarmIdRef?.xmlId,
-          farmName: field.attributes.FarmIdRef?.entity?.attributes?.FarmDesignator,
+          customerId: customerRef?.xmlId,
+          customerName: customerName === "undefined" ? customerRef?.xmlId : customerName,
+          farmId: farmRef?.xmlId,
+          farmName: farmName === "undefined" ? farmRef?.xmlId : farmName,
         }
         featureCollection.features.push(feature)
       }
