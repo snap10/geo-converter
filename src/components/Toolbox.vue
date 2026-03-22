@@ -67,14 +67,12 @@
             v-for="farm in store.farmInfo"
             :key="farm.id"
             type="button"
-            :class="[
-              'px-3 py-1 text-sm rounded-full border transition-colors',
-              isFarmFullySelected(farm.id)
-                ? 'bg-blue-500 text-white border-blue-500'
-                : isFarmPartiallySelected(farm.id)
-                  ? 'bg-blue-100 text-blue-700 border-blue-300'
-                  : 'bg-white text-gray-700 border-gray-300 hover:border-gray-400'
-            ]"
+            :style="{
+              backgroundColor: isFarmFullySelected(farm.id) ? getFarmColor(farm.id) : 'white',
+              borderColor: getFarmColor(farm.id),
+              color: isFarmFullySelected(farm.id) ? 'white' : getFarmColor(farm.id)
+            }"
+            class="px-3 py-1 text-sm rounded-full border-2 transition-colors hover:opacity-80"
             @click="toggleFarmSelection(farm.id)"
           >
             {{ farm.name }}
@@ -97,9 +95,6 @@
               </th>
               <th class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 No.
-              </th>
-              <th class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Color
               </th>
               <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Name
@@ -165,25 +160,6 @@
               </td>
               <td class="px-2 py-4 whitespace-nowrap">
                 {{ index + 1 }}
-              </td>
-              <td class="px-2 py-4 whitespace-nowrap">
-                <div class="flex items-center space-x-2">
-                  <div 
-                    v-if="feature.properties?.upload_id"
-                    class="w-3 h-3 rounded-full" 
-                    :style="{ backgroundColor: getColorFromString(feature.properties.upload_id), border: '1px solid ' + getContrastColor(getColorFromString(feature.properties.upload_id)) }"
-                  ></div>
-                  <div 
-                    v-else-if="feature.properties?.farmId"
-                    class="w-3 h-3 rounded-full" 
-                    :style="{ backgroundColor: getOperationColor(feature.properties.farmId), border: '1px solid #000000' }"
-                  ></div>
-                  <div 
-                    v-else
-                    class="w-3 h-3 rounded-full" 
-                    style="backgroundColor: #ff7800; border: 1px solid #000000"
-                  ></div>
-                </div>
               </td>
               <td class="px-4 py-4 whitespace-nowrap">
                 {{ feature.properties?.partfieldDesignator || feature.properties?.feature_id }}
@@ -333,6 +309,11 @@ function isFarmPartiallySelected(farmId: string): boolean {
 
 function getFarmFeatureCount(farmId: string): number {
   return store.geojson.features.filter(f => f.properties?.farmId === farmId).length
+}
+
+function getFarmColor(farmId: string): string {
+  if (!farmId) return "#ff7800"
+  return getColorFromString(farmId)
 }
 
 function openEditDialog(feature: any) {
