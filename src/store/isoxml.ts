@@ -86,6 +86,8 @@ export const useIsoXmlStore = defineStore("isoxml", {
       const customers = taskManager.rootElement.attributes.Customer || []
       const farms = taskManager.rootElement.attributes.Farm || []
       
+      console.log("ISOXML parse - farms found:", farms.map(f => ({ id: f.attributes.FarmId, attrs: f.attributes })))
+      
       for (const field of partfields) {
         const feature = { type: "Feature" }
         const geometry = field.toGeoJSON?.()
@@ -100,17 +102,11 @@ export const useIsoXmlStore = defineStore("isoxml", {
         let customerName = customerEntity?.attributes?.CustomerLastName || customerEntity?.attributes?.CustomerName
         let farmName = farmEntity?.attributes?.FarmDesignator || farmEntity?.attributes?.FarmName
         
-        if ((customerName === "undefined" || !customerName) && customerRef?.xmlId) {
-          const foundCustomer = customers.find(c => c.attributes.CustomerId === customerRef.xmlId)
-          if (foundCustomer) {
-            customerName = foundCustomer.attributes.CustomerLastName || foundCustomer.attributes.CustomerFirstName
-          }
+        if (customerName === "undefined" || !customerName) {
+          customerName = customerRef?.xmlId
         }
-        if ((farmName === "undefined" || !farmName) && farmRef?.xmlId) {
-          const foundFarm = farms.find(f => f.attributes.FarmId === farmRef.xmlId)
-          if (foundFarm) {
-            farmName = foundFarm.attributes.FarmDesignator || foundFarm.attributes.FarmCity
-          }
+        if (farmName === "undefined" || !farmName) {
+          farmName = farmRef?.xmlId
         }
         
         feature.properties = {
