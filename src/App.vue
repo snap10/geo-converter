@@ -1,11 +1,10 @@
 <template>
-  <div>
-    <Header />
-    <div class="flex">
+  <Header>
+    <div class="flex h-full">
       <Toolbox />
       <Map />
     </div>
-  </div>
+  </Header>
 </template>
 
 <script setup>
