@@ -54,12 +54,12 @@ export const useIsoXmlStore = defineStore("isoxml", {
 
           partfield.boundaryFromGeoJSON(feature.geometry, taskManager)
           
-          const farmId = getOrCreateFarmXmlRef(taskManager, feature.properties?.betrieb, feature.properties?.betriebName)
+          const farmId = getOrCreateFarmXmlRef(taskManager, feature.properties?.farmId, feature.properties?.farmName)
           if (farmId) {
             partfield.attributes.FarmIdRef = farmId
           }
           
-          const customerId = getOrCreateCustomerXmlRef(taskManager, feature.properties?.kunde, feature.properties?.kundenName)
+          const customerId = getOrCreateCustomerXmlRef(taskManager, feature.properties?.customerId, feature.properties?.customerName)
           if (customerId) {
             partfield.attributes.CustomerIdRef = customerId
           }
@@ -76,10 +76,10 @@ export const useIsoXmlStore = defineStore("isoxml", {
       return data
     },
 
-    async parseAsGeoJson(content: Uint8Array, type: string) {
+    async parseAsGeoJson(content: Uint8Array | string, type: string) {
       const isoxml = await getIsoxmlModule()
       const taskManager = new isoxml.ISOXMLManager()
-      await taskManager.parseISOXMLFile(content, type)
+      await taskManager.parseISOXMLFile(content, type as any)
       const partfields = taskManager.rootElement.attributes.Partfield
       const featureCollection = { type: "FeatureCollection", features: [] }
 
@@ -90,12 +90,12 @@ export const useIsoXmlStore = defineStore("isoxml", {
         
         feature.properties = {
           geo_id: field.attributes?.PartfieldCode,
-          bez: field.attributes?.PartfieldDesignator,
-          flaeche_ha: field.attributes?.PartfieldArea ? parseFloat(field.attributes.PartfieldArea) / 10000 : undefined,
-          kunde: field.attributes.CustomerIdRef?.xmlId,
-          kundenName: field.attributes.CustomerIdRef?.entity?.attributes?.CustomerLastName,
-          betrieb: field.attributes.FarmIdRef?.xmlId,
-          betriebName: field.attributes.FarmIdRef?.entity?.attributes?.FarmDesignator,
+          partfieldDesignator: field.attributes?.PartfieldDesignator,
+          partfieldArea: field.attributes?.PartfieldArea ? parseFloat(field.attributes.PartfieldArea) / 10000 : undefined,
+          customerId: field.attributes.CustomerIdRef?.xmlId,
+          customerName: field.attributes.CustomerIdRef?.entity?.attributes?.CustomerLastName,
+          farmId: field.attributes.FarmIdRef?.xmlId,
+          farmName: field.attributes.FarmIdRef?.entity?.attributes?.FarmDesignator,
         }
         featureCollection.features.push(feature)
       }
