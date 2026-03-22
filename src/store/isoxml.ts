@@ -97,17 +97,30 @@ export const useIsoXmlStore = defineStore("isoxml", {
         const customerEntity = customerRef?.entity || customers.find(c => c.attributes.CustomerId === customerRef?.xmlId)
         const farmEntity = farmRef?.entity || farms.find(f => f.attributes.FarmId === farmRef?.xmlId)
         
-        const customerName = customerEntity?.attributes?.CustomerLastName || customerEntity?.attributes?.CustomerName || customerRef?.xmlId
-        const farmName = farmEntity?.attributes?.FarmDesignator || farmEntity?.attributes?.FarmName || farmRef?.xmlId
+        let customerName = customerEntity?.attributes?.CustomerLastName || customerEntity?.attributes?.CustomerName
+        let farmName = farmEntity?.attributes?.FarmDesignator || farmEntity?.attributes?.FarmName
+        
+        if (customerName === "undefined" || !customerName) {
+          const xmlRef = taskManager.xmlReferences?.get(customerRef?.xmlId)
+          if (xmlRef?.attributes) {
+            customerName = xmlRef.attributes.CustomerLastName || xmlRef.attributes.CustomerName
+          }
+        }
+        if (farmName === "undefined" || !farmName) {
+          const xmlRef = taskManager.xmlReferences?.get(farmRef?.xmlId)
+          if (xmlRef?.attributes) {
+            farmName = xmlRef.attributes.FarmDesignator || xmlRef.attributes.FarmName
+          }
+        }
         
         feature.properties = {
           geo_id: field.attributes?.PartfieldCode,
           partfieldDesignator: field.attributes?.PartfieldDesignator,
           partfieldArea: field.attributes?.PartfieldArea ? parseFloat(field.attributes.PartfieldArea) / 10000 : undefined,
           customerId: customerRef?.xmlId,
-          customerName: customerName === "undefined" ? customerRef?.xmlId : customerName,
+          customerName: customerName || customerRef?.xmlId,
           farmId: farmRef?.xmlId,
-          farmName: farmName === "undefined" ? farmRef?.xmlId : farmName,
+          farmName: farmName || farmRef?.xmlId,
         }
         featureCollection.features.push(feature)
       }
