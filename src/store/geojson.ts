@@ -29,8 +29,8 @@ export interface Upload {
 export interface PendingDuplicate {
   existingUpload: Upload
   newUpload: Upload
-  existingFarmIds: string[]
-  newFarmIds: string[]
+  existingFeatures: { geo_id: string; partfieldDesignator?: string }[]
+  newFeatures: { geo_id: string; partfieldDesignator?: string }[]
 }
 
 export { FARM_COLORS }
@@ -271,40 +271,36 @@ export const useGeojsonStore = defineStore("geojson", {
     hasPendingDuplicates(): boolean {
       return this.pendingDuplicates.length > 0
     },
-    addPendingDuplicate(existingUpload: Upload, newUpload: Upload, existingFarmIds: string[], newFarmIds: string[]) {
-      this.pendingDuplicates.push({ existingUpload, newUpload, existingFarmIds, newFarmIds })
+    addPendingDuplicate(existingUpload: Upload, newUpload: Upload, existingFeatures: { geo_id: string; partfieldDesignator?: string }[], newFeatures: { geo_id: string; partfieldDesignator?: string }[]) {
+      this.pendingDuplicates.push({ existingUpload, newUpload, existingFeatures, newFeatures })
     },
     resolveDuplicate(index: number, action: "keep_existing" | "keep_new" | "keep_both") {
       if (index < 0 || index >= this.pendingDuplicates.length) return
       
       const duplicate = this.pendingDuplicates[index]
+      const duplicateGeoIds = duplicate.newFeatures.map(f => f.geo_id)
+      
       if (action === "keep_existing") {
-        // Remove new upload and its features
         this.geojson.features = this.geojson.features.filter(
           f => f.properties?.upload_id !== duplicate.newUpload.id
         )
         this.uploads = this.uploads.filter(u => u.id !== duplicate.newUpload.id)
       } else if (action === "keep_new") {
-        // Remove existing features from this upload
         this.geojson.features = this.geojson.features.filter(
           f => f.properties?.upload_id !== duplicate.existingUpload.id
         )
         this.uploads = this.uploads.filter(u => u.id !== duplicate.existingUpload.id)
       } else if (action === "keep_both") {
-        // Rename the new farm IDs to avoid collision
         this.geojson.features.forEach(feature => {
           if (feature.properties?.upload_id === duplicate.newUpload.id) {
-            const oldFarmId = feature.properties?.farmId
-            if (oldFarmId && duplicate.existingFarmIds.includes(oldFarmId)) {
-              feature.properties.farmId = `${oldFarmId}_copy`
-              feature.properties.farmName = feature.properties.farmName 
-                ? `${feature.properties.farmName} (Kopie)` 
-                : `${oldFarmId} (Kopie)`
+            const geoId = feature.properties?.geo_id
+            if (geoId && duplicateGeoIds.includes(geoId)) {
+              feature.properties.geo_id = `${geoId}_copy`
             }
           }
         })
         duplicate.newUpload.farmIds = duplicate.newUpload.farmIds.map(id => 
-          duplicate.existingFarmIds.includes(id) ? `${id}_copy` : id
+          duplicateGeoIds.includes(id) ? `${id}_copy` : id
         )
       }
       this.pendingDuplicates.splice(index, 1)

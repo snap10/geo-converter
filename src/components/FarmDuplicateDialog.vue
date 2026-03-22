@@ -20,11 +20,14 @@
               <p class="text-sm text-gray-600">{{ duplicate.existingUpload.name }}</p>
               <p class="text-xs text-gray-500 mt-1">{{ duplicate.existingUpload.featureCount }} Felder</p>
               <div class="mt-2">
-                <span class="text-xs font-medium">geo_id:</span>
-                <ul class="text-xs text-gray-600 mt-1">
-                  <li v-for="geoId in duplicate.existingFarmIds" :key="geoId" class="flex items-center gap-1">
-                    <span class="w-2 h-2 rounded-full" :style="{ backgroundColor: getFarmColor(geoId) }"></span>
-                    {{ geoId }}
+                <span class="text-xs font-medium">Doppelte Felder:</span>
+                <ul class="text-xs text-gray-600 mt-1 space-y-1">
+                  <li v-for="feature in duplicate.existingFeatures" :key="feature.geo_id" class="flex flex-col">
+                    <span class="flex items-center gap-1">
+                      <span class="w-2 h-2 rounded-full" :style="{ backgroundColor: getFarmColor(feature.geo_id) }"></span>
+                      <span class="font-mono">{{ feature.geo_id }}</span>
+                    </span>
+                    <span v-if="feature.partfieldDesignator" class="text-gray-400 ml-3">{{ feature.partfieldDesignator }}</span>
                   </li>
                 </ul>
               </div>
@@ -35,11 +38,14 @@
               <p class="text-sm text-gray-600">{{ duplicate.newUpload.name }}</p>
               <p class="text-xs text-gray-500 mt-1">{{ duplicate.newUpload.featureCount }} Felder</p>
               <div class="mt-2">
-                <span class="text-xs font-medium">geo_id:</span>
-                <ul class="text-xs text-gray-600 mt-1">
-                  <li v-for="geoId in duplicate.newFarmIds" :key="geoId" class="flex items-center gap-1">
-                    <span class="w-2 h-2 rounded-full" :style="{ backgroundColor: getFarmColor(geoId) }"></span>
-                    {{ geoId }}
+                <span class="text-xs font-medium">Doppelte Felder:</span>
+                <ul class="text-xs text-gray-600 mt-1 space-y-1">
+                  <li v-for="feature in duplicate.newFeatures" :key="feature.geo_id" class="flex flex-col">
+                    <span class="flex items-center gap-1">
+                      <span class="w-2 h-2 rounded-full" :style="{ backgroundColor: getFarmColor(feature.geo_id) }"></span>
+                      <span class="font-mono">{{ feature.geo_id }}</span>
+                    </span>
+                    <span v-if="feature.partfieldDesignator" class="text-gray-400 ml-3">{{ feature.partfieldDesignator }}</span>
                   </li>
                 </ul>
               </div>
