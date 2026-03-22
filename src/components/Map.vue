@@ -1,5 +1,5 @@
 <template>
-  <main id="map" class="flex-1 h-screen">
+  <main id="map" class="flex-1">
     <l-map
       ref="mapRef"
       :zoom="data.zoom"
