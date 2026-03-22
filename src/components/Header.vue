@@ -5,7 +5,7 @@
     </h1>
     <div class="">
       <button class="bg-blue-500  hover:bg-blue-600 text-white py-2 px-4 rounded-full shadow disabled:opacity-50 disabled:cursor-not-allowed" :disabled="!geojson?.features?.length" @click="loadIsoxml()">
-        ISOXML Taskdata herunterladen
+        ISOXML-Taskdata herunterladen
       </button>
     </div>
   </header>

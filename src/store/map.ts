@@ -53,7 +53,7 @@ export const useMapStore = defineStore("map", {
         map.flyTo(center, zoom, { duration: 0.5 })
         
         if (feature.properties && feature.properties.bez) {
-          const popupContent = `Name:  ${feature.properties.bez}</br>Fläche: ${feature.properties.flaeche_ha} ha</br>Betrieb: ${feature.properties.betriebName || feature.properties.betrieb || feature.properties.ud_id}`
+          const popupContent = `Name: ${feature.properties.bez}</br>Fläche: ${feature.properties.flaeche_ha} ha</br>Betrieb: ${feature.properties.betriebName || feature.properties.betrieb || feature.properties.ud_id}`
           setTimeout(() => {
             map.openPopup(popupContent, center)
           }, 600)

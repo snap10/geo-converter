@@ -53,7 +53,7 @@ function zoomToFeature(feature: any) {
   // Show popup for this feature (simplified - in practice you'd find the exact layer)
   if (feature.properties.bez) {
     // Create a popup content
-    const popupContent = `Name:  ${feature.properties.bez}</br>Fläche: ${feature.properties.flaeche_ha} ha</br>Betrieb: ${feature.properties.betriebName || feature.properties.betrieb || feature.properties.ud_id}`
+    const popupContent = `Name: ${feature.properties.bez}</br>Fläche: ${feature.properties.flaeche_ha} ha</br>Betrieb: ${feature.properties.betriebName || feature.properties.betrieb || feature.properties.ud_id}`
 
     // Open a popup at the center of the bounds
     const center = bounds.getCenter()
@@ -123,7 +123,7 @@ const data = ref({
     onEachFeature: function onEachFeature(feature, layer) {
       // does this feature have a property named popupContent?
       if (feature.properties.bez) {
-        layer.bindPopup(`Name:  ${feature.properties.bez}</br>Fläche: ${feature.properties.flaeche_ha} ha</br>Betrieb: ${feature.properties.betriebName || feature.properties.betrieb || feature.properties.ud_id}`)
+        layer.bindPopup(`Name: ${feature.properties.bez}</br>Fläche: ${feature.properties.flaeche_ha} ha</br>Betrieb: ${feature.properties.betriebName || feature.properties.betrieb || feature.properties.ud_id}`)
       }
 
       // Apply dynamic styling

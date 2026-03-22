@@ -7,7 +7,7 @@
       <h4
         class=" font-bold mb-4"
       >
-        Importiere Fiona Shape (ZIP)
+        Importiere ESRI-Shapefile (ZIP)
       </h4>
       <form class="flex items-center space-x-6 mb-4">
         <label class="block">
@@ -31,7 +31,7 @@
       <h4
         class="font-bold mb-4"
       >
-        Importiere Isoxml TASKDATA (ZIP/XML)
+        Importiere ISOXML-Taskdata (ZIP/XML)
       </h4>
       <form class="flex items-center space-x-6 mb-4">
         <label class="block">
@@ -77,7 +77,7 @@
                 Name
               </th>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Fläche (Ha)
+                Fläche (ha)
               </th>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Betrieb
