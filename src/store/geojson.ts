@@ -4,10 +4,19 @@ import shp from "shpjs"
 export const useGeojsonStore = defineStore("geojson", {
   state: () => ({
     geojson: { type: "FeatureCollection", features: [] },
+    uploadCounter: 0, // Counter to generate unique upload IDs
   }),
   actions: {
     async parseShapeToGeoJson(fileContent: any) {
       const geojson = await shp.parseZip(fileContent)
+      // Add upload_id to each feature
+      const uploadId = `upload_${++this.uploadCounter}`
+      geojson.features.forEach(feature => {
+        if (!feature.properties) {
+          feature.properties = {}
+        }
+        feature.properties.upload_id = uploadId
+      })
       this.addFeatures(geojson.features)
     },
     addFeatures(features: any[]) {
@@ -19,5 +28,4 @@ export const useGeojsonStore = defineStore("geojson", {
       this.geojson = geojson
     },
   },
-
 })
