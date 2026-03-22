@@ -2,13 +2,19 @@ import { defineStore } from "pinia"
 import shp from "shpjs"
 import { computed } from "vue"
 
+const FARM_COLORS = [
+  "#e74c3c", "#3498db", "#2ecc71", "#f39c12", "#9b59b6",
+  "#1abc9c", "#e67e22", "#34495e", "#16a085", "#c0392b",
+  "#2980b9", "#27ae60", "#d35400", "#8e44ad", "#0d8195",
+  "#f1c40f", "#2c3e50", "#7f8c8d", "#95a5a6", "#bdc3c7",
+]
+
 function getColorFromString(str: string): string {
   let hash = 0
   for (let i = 0; i < str.length; i++) {
     hash = str.charCodeAt(i) + ((hash << 5) - hash)
   }
-  const c = (hash & 0x00FFFFFF).toString(16).toUpperCase()
-  return `#${"00000".substring(0, 6 - c.length)}${c}`
+  return FARM_COLORS[Math.abs(hash) % FARM_COLORS.length]
 }
 
 export const useGeojsonStore = defineStore("geojson", {
