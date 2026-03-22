@@ -271,7 +271,11 @@ export const useGeojsonStore = defineStore("geojson", {
       
       const duplicate = this.pendingDuplicates[index]
       if (action === "keep_existing") {
-        // Do nothing - new features are not added
+        // Remove new upload and its features
+        this.geojson.features = this.geojson.features.filter(
+          f => f.properties?.upload_id !== duplicate.newUpload.id
+        )
+        this.uploads = this.uploads.filter(u => u.id !== duplicate.newUpload.id)
       } else if (action === "keep_new") {
         // Remove existing features from this upload
         this.geojson.features = this.geojson.features.filter(

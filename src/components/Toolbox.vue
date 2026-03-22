@@ -208,7 +208,8 @@
                 {{ index + 1 }}
               </td>
               <td class="px-4 py-4 whitespace-nowrap">
-                {{ feature.properties?.partfieldDesignator || feature.properties?.feature_id }}
+                <div>{{ feature.properties?.partfieldDesignator || feature.properties?.feature_id }}</div>
+                <div v-if="feature.properties?.geo_id" class="text-xs text-gray-400">{{ feature.properties?.geo_id }}</div>
               </td>
               <td class="px-4 py-4 whitespace-nowrap">
                 {{ feature.properties?.partfieldArea }}
@@ -279,28 +280,19 @@ const loadShapeZipFile = function() {
       if (geojson) {
         const geoIds = extractGeoIds(geojson.features)
         const duplicateGeoIds = store.getDuplicateFarmIds(geoIds)
+        const uploadId = store.addUpload(fileName, "shapefile", geojson.features.length, geoIds)
         
-        if (duplicateGeoIds.length > 0 && store.uploads.length > 0) {
-          const existingUploads = store.uploads
-          const newUpload: Upload = {
-            id: `upload_temp_${Date.now()}`,
-            name: fileName,
-            type: "shapefile",
-            featureCount: geojson.features.length,
-            farmIds: geoIds,
-            timestamp: new Date()
+        if (duplicateGeoIds.length > 0 && store.uploads.length > 1) {
+          const existingUploads = store.uploads.filter(u => u.id !== uploadId)
+          const existingUpload = existingUploads.find(u => u.farmIds.some(fid => duplicateGeoIds.includes(fid)))
+          if (existingUpload) {
+            store.addPendingDuplicate(
+              existingUpload,
+              store.getUploadById(uploadId)!,
+              duplicateGeoIds,
+              duplicateGeoIds
+            )
           }
-          const existingGeoIds = geoIds.filter(id => 
-            existingUploads.some(u => u.farmIds.includes(id))
-          )
-          store.addPendingDuplicate(
-            existingUploads.find(u => u.farmIds.some(fid => duplicateGeoIds.includes(fid)))!,
-            newUpload,
-            existingGeoIds,
-            duplicateGeoIds
-          )
-        } else {
-          store.addUpload(fileName, "shapefile", geojson.features.length, geoIds)
         }
       }
     }
@@ -323,28 +315,19 @@ const loadIsoXmlFile = function() {
       if (geojson) {
         const geoIds = extractGeoIds(geojson.features)
         const duplicateGeoIds = store.getDuplicateFarmIds(geoIds)
+        const uploadId = store.addUpload(fileName, "isoxml", geojson.features.length, geoIds)
         
-        if (duplicateGeoIds.length > 0 && store.uploads.length > 0) {
-          const existingUploads = store.uploads
-          const newUpload: Upload = {
-            id: `upload_temp_${Date.now()}`,
-            name: fileName,
-            type: "isoxml",
-            featureCount: geojson.features.length,
-            farmIds: geoIds,
-            timestamp: new Date()
+        if (duplicateGeoIds.length > 0 && store.uploads.length > 1) {
+          const existingUploads = store.uploads.filter(u => u.id !== uploadId)
+          const existingUpload = existingUploads.find(u => u.farmIds.some(fid => duplicateGeoIds.includes(fid)))
+          if (existingUpload) {
+            store.addPendingDuplicate(
+              existingUpload,
+              store.getUploadById(uploadId)!,
+              duplicateGeoIds,
+              duplicateGeoIds
+            )
           }
-          const existingGeoIds = geoIds.filter(id => 
-            existingUploads.some(u => u.farmIds.includes(id))
-          )
-          store.addPendingDuplicate(
-            existingUploads.find(u => u.farmIds.some(fid => duplicateGeoIds.includes(fid)))!,
-            newUpload,
-            existingGeoIds,
-            duplicateGeoIds
-          )
-        } else {
-          store.addUpload(fileName, "isoxml", geojson.features.length, geoIds)
         }
       }
     }
@@ -385,7 +368,11 @@ const handleDuplicateResolve = (action: "keep_existing" | "keep_new" | "keep_bot
 }
 
 const handleDuplicateCancel = () => {
-  store.pendingDuplicates = []
+  if (store.pendingDuplicates.length > 0) {
+    const newUpload = store.pendingDuplicates[0].newUpload
+    store.removeUpload(newUpload.id)
+    store.pendingDuplicates = []
+  }
 }
 
 function getColorFromString(str: string): string {
