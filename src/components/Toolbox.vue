@@ -68,14 +68,14 @@
             :key="farm.id"
             type="button"
             :style="{
-              backgroundColor: isFarmFullySelected(farm.id) ? getFarmColor(farm.id) : 'transparent',
-              borderColor: getFarmColor(farm.id),
-              color: isFarmFullySelected(farm.id) ? 'white' : getFarmColor(farm.id)
+              backgroundColor: isFarmFullySelected(farm.id) ? farm.color : 'transparent',
+              borderColor: farm.color,
+              color: isFarmFullySelected(farm.id) ? 'white' : farm.color
             }"
             class="px-3 py-1 text-sm rounded border-2 transition-colors hover:opacity-80"
             @click="toggleFarmSelection(farm.id)"
           >
-            <span class="inline-block w-3 h-3 rounded-sm mr-1" :style="{ backgroundColor: getFarmColor(farm.id) }"></span>
+            <span class="inline-block w-3 h-3 rounded-sm mr-1" :style="{ backgroundColor: farm.color }"></span>
             {{ farm.name }}
             <span class="ml-1 text-xs opacity-75">({{ getFarmFeatureCount(farm.id) }})</span>
           </button>

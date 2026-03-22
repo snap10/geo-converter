@@ -2,6 +2,15 @@ import { defineStore } from "pinia"
 import shp from "shpjs"
 import { computed } from "vue"
 
+function getColorFromString(str: string): string {
+  let hash = 0
+  for (let i = 0; i < str.length; i++) {
+    hash = str.charCodeAt(i) + ((hash << 5) - hash)
+  }
+  const c = (hash & 0x00FFFFFF).toString(16).toUpperCase()
+  return `#${"00000".substring(0, 6 - c.length)}${c}`
+}
+
 export const useGeojsonStore = defineStore("geojson", {
   state: () => ({
     geojson: { type: "FeatureCollection", features: [] },
@@ -34,12 +43,22 @@ export const useGeojsonStore = defineStore("geojson", {
       return Array.from(farms)
     },
     farmInfo: (state) => {
-      const farmsMap = new Map<string, { id: string; name: string }>()
+      const farmsMap = new Map<string, { id: string; name: string; color: string }>()
+      const allFarmIds = new Set<string>()
+      state.geojson.features.forEach(feature => {
+        const farmId = feature.properties?.farmId
+        if (farmId) {
+          allFarmIds.add(farmId)
+        }
+      })
+      const totalFarms = allFarmIds.size
+      
       state.geojson.features.forEach(feature => {
         const farmId = feature.properties?.farmId
         const farmName = feature.properties?.farmName
         if (farmId && !farmsMap.has(farmId)) {
-          farmsMap.set(farmId, { id: farmId, name: farmName || farmId })
+          const color = totalFarms === 1 ? "#3388ff" : getColorFromString(farmId)
+          farmsMap.set(farmId, { id: farmId, name: farmName || farmId, color })
         }
       })
       return Array.from(farmsMap.values())
