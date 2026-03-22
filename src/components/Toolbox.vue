@@ -60,6 +60,28 @@
           {{ store.selectedCount }} / {{ store.geojson.features.length }} ausgewählt
         </span>
       </div>
+      <div v-if="store.availableFarms.length > 0" class="mb-4 p-3 bg-white rounded-lg shadow-sm">
+        <div class="text-xs font-medium text-gray-500 uppercase mb-2">Nach Betrieb auswählen:</div>
+        <div class="flex flex-wrap gap-2">
+          <button
+            v-for="farm in store.availableFarms"
+            :key="farm"
+            type="button"
+            :class="[
+              'px-3 py-1 text-sm rounded-full border transition-colors',
+              isFarmFullySelected(farm)
+                ? 'bg-blue-500 text-white border-blue-500'
+                : isFarmPartiallySelected(farm)
+                  ? 'bg-blue-100 text-blue-700 border-blue-300'
+                  : 'bg-white text-gray-700 border-gray-300 hover:border-gray-400'
+            ]"
+            @click="toggleFarmSelection(farm)"
+          >
+            {{ farm }}
+            <span class="ml-1 text-xs opacity-75">({{ getFarmFeatureCount(farm) }})</span>
+          </button>
+        </div>
+      </div>
       <div class="bg-white rounded-lg shadow overflow-x-auto">
         <table class="min-w-full divide-y divide-gray-200">
           <thead class="bg-gray-50">
@@ -295,6 +317,22 @@ function toggleFarmSelection(farmId: string) {
 function isFarmSelected(farmId: string): boolean {
   const farmFeatures = store.geojson.features.filter(f => f.properties?.farmId === farmId)
   return farmFeatures.length > 0 && farmFeatures.every(f => store.isFeatureSelected(f.properties?.feature_id))
+}
+
+function isFarmFullySelected(farmId: string): boolean {
+  const farmFeatures = store.geojson.features.filter(f => f.properties?.farmId === farmId)
+  return farmFeatures.length > 0 && farmFeatures.every(f => store.isFeatureSelected(f.properties?.feature_id))
+}
+
+function isFarmPartiallySelected(farmId: string): boolean {
+  const farmFeatures = store.geojson.features.filter(f => f.properties?.farmId === farmId)
+  if (farmFeatures.length === 0) return false
+  const selectedCount = farmFeatures.filter(f => store.isFeatureSelected(f.properties?.feature_id)).length
+  return selectedCount > 0 && selectedCount < farmFeatures.length
+}
+
+function getFarmFeatureCount(farmId: string): number {
+  return store.geojson.features.filter(f => f.properties?.farmId === farmId).length
 }
 
 function openEditDialog(feature: any) {
