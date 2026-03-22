@@ -25,9 +25,11 @@
           Open Source: 
           <a href="https://github.com/snap10/geo-converter" target="_blank" class="underline hover:text-white">GeoConverter</a>
           | Verwendet <a href="https://github.com/progis-ags/isoxml-js" target="_blank" class="underline hover:text-white">isoxml-js</a> (Apache-2.0)
+          | <a href="/TERMS.html" target="_blank" class="underline hover:text-white">Nutzungsbedingungen</a>
         </span>
         <span>
           <a href="/LICENSE" target="_blank" class="underline hover:text-white">MIT / Apache-2.0</a>
+          | Verwendung auf eigene Gefahr
         </span>
       </div>
     </footer>
