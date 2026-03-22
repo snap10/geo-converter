@@ -123,4 +123,182 @@ describe("useGeojsonStore", () => {
 
     expect(store.geojson.features[0].properties.feature_id).toBe("feature_1")
   })
+
+  describe("selection functionality", () => {
+    it("should initialize with empty selection", () => {
+      const store = useGeojsonStore()
+      expect(store.selectedFeatureIds.size).toBe(0)
+      expect(store.selectedCount).toBe(0)
+    })
+
+    it("should select and deselect features", () => {
+      const store = useGeojsonStore()
+      
+      store.addFeatures([
+        { type: "Feature", geometry: {}, properties: {} }
+      ])
+      
+      const featureId = store.geojson.features[0].properties.feature_id
+      
+      store.selectFeature(featureId)
+      expect(store.isFeatureSelected(featureId)).toBe(true)
+      expect(store.selectedCount).toBe(1)
+      
+      store.deselectFeature(featureId)
+      expect(store.isFeatureSelected(featureId)).toBe(false)
+      expect(store.selectedCount).toBe(0)
+    })
+
+    it("should toggle selection", () => {
+      const store = useGeojsonStore()
+      
+      store.addFeatures([
+        { type: "Feature", geometry: {}, properties: {} }
+      ])
+      
+      const featureId = store.geojson.features[0].properties.feature_id
+      // Feature is auto-selected on add, so toggle deselects it
+      store.toggleSelection(featureId)
+      expect(store.isFeatureSelected(featureId)).toBe(false)
+      
+      store.toggleSelection(featureId)
+      expect(store.isFeatureSelected(featureId)).toBe(true)
+    })
+
+    it("should select all features", () => {
+      const store = useGeojsonStore()
+      
+      store.addFeatures([
+        { type: "Feature", geometry: {}, properties: {} },
+        { type: "Feature", geometry: {}, properties: {} },
+        { type: "Feature", geometry: {}, properties: {} }
+      ])
+      
+      store.selectAll()
+      expect(store.selectedCount).toBe(3)
+      expect(store.allSelected).toBe(true)
+    })
+
+    it("should deselect all features", () => {
+      const store = useGeojsonStore()
+      
+      store.addFeatures([
+        { type: "Feature", geometry: {}, properties: {} },
+        { type: "Feature", geometry: {}, properties: {} }
+      ])
+      
+      store.selectAll()
+      store.deselectAll()
+      
+      expect(store.selectedCount).toBe(0)
+      expect(store.allSelected).toBe(false)
+    })
+
+    it("should select features by farm", () => {
+      const store = useGeojsonStore()
+      
+      store.addFeatures([
+        { type: "Feature", geometry: {}, properties: { farmId: "FRM1" } },
+        { type: "Feature", geometry: {}, properties: { farmId: "FRM1" } },
+        { type: "Feature", geometry: {}, properties: { farmId: "FRM2" } }
+      ])
+      
+      // All features are auto-selected on add, so deselect all first
+      store.deselectAll()
+      store.selectByFarm("FRM1")
+      expect(store.selectedCount).toBe(2)
+    })
+
+    it("should deselect features by farm", () => {
+      const store = useGeojsonStore()
+      
+      store.addFeatures([
+        { type: "Feature", geometry: {}, properties: { farmId: "FRM1" } },
+        { type: "Feature", geometry: {}, properties: { farmId: "FRM1" } },
+        { type: "Feature", geometry: {}, properties: { farmId: "FRM2" } }
+      ])
+      
+      store.selectAll()
+      store.deselectByFarm("FRM1")
+      
+      expect(store.selectedCount).toBe(1)
+    })
+
+    it("should toggle farm selection", () => {
+      const store = useGeojsonStore()
+      
+      store.addFeatures([
+        { type: "Feature", geometry: {}, properties: { farmId: "FRM1" } },
+        { type: "Feature", geometry: {}, properties: { farmId: "FRM1" } }
+      ])
+      
+      // All features are auto-selected, so first toggle deselects them
+      store.toggleFarmSelection("FRM1")
+      expect(store.selectedCount).toBe(0)
+      
+      // Second toggle selects them again
+      store.toggleFarmSelection("FRM1")
+      expect(store.selectedCount).toBe(2)
+    })
+
+    it("should return selected features", () => {
+      const store = useGeojsonStore()
+      
+      store.addFeatures([
+        { type: "Feature", geometry: { type: "Polygon" }, properties: { name: "Field 1" } },
+        { type: "Feature", geometry: { type: "Polygon" }, properties: { name: "Field 2" } },
+        { type: "Feature", geometry: { type: "Polygon" }, properties: { name: "Field 3" } }
+      ])
+      
+      // All features are auto-selected, so deselect all first
+      store.deselectAll()
+      store.selectFeature(store.geojson.features[0].properties.feature_id)
+      store.selectFeature(store.geojson.features[2].properties.feature_id)
+      
+      expect(store.selectedFeatures).toHaveLength(2)
+      expect(store.selectedFeatures[0].properties.name).toBe("Field 1")
+      expect(store.selectedFeatures[1].properties.name).toBe("Field 3")
+    })
+
+    it("should return available farms", () => {
+      const store = useGeojsonStore()
+      
+      store.addFeatures([
+        { type: "Feature", geometry: {}, properties: { farmId: "FRM1" } },
+        { type: "Feature", geometry: {}, properties: { farmId: "FRM2" } },
+        { type: "Feature", geometry: {}, properties: { farmId: "FRM1" } },
+        { type: "Feature", geometry: {}, properties: {} }
+      ])
+      
+      expect(store.availableFarms).toEqual(["FRM1", "FRM2"])
+    })
+
+    it("should update feature properties", () => {
+      const store = useGeojsonStore()
+      
+      store.addFeatures([
+        { type: "Feature", geometry: {}, properties: { partfieldDesignator: "Field1", partfieldArea: 10 } }
+      ])
+      
+      const featureId = store.geojson.features[0].properties.feature_id
+      store.updateFeature(featureId, { partfieldDesignator: "Updated Field", partfieldArea: 20 })
+      
+      expect(store.geojson.features[0].properties.partfieldDesignator).toBe("Updated Field")
+      expect(store.geojson.features[0].properties.partfieldArea).toBe(20)
+    })
+
+    it("should get feature by id", () => {
+      const store = useGeojsonStore()
+      
+      store.addFeatures([
+        { type: "Feature", geometry: {}, properties: { partfieldDesignator: "Field1" } },
+        { type: "Feature", geometry: {}, properties: { partfieldDesignator: "Field2" } }
+      ])
+      
+      const featureId = store.geojson.features[1].properties.feature_id
+      const feature = store.getFeatureById(featureId)
+      
+      expect(feature?.properties?.partfieldDesignator).toBe("Field2")
+    })
+  })
 })

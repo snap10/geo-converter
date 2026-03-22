@@ -17,8 +17,9 @@ export const useIsoXmlStore = defineStore("isoxml", {
   getters: {
   },
   actions: {
-    async createIsoXml() {
-      const { geojson } = useGeojsonStore()
+    async createIsoXml(selectedOnly: boolean = false) {
+      const geojsonStore = useGeojsonStore()
+      const { geojson } = geojsonStore
       const isoxml = await getIsoxmlModule()
       const taskManager = new isoxml.ISOXMLManager()
       const partFields = []
@@ -26,7 +27,11 @@ export const useIsoXmlStore = defineStore("isoxml", {
       taskManager.rootElement.attributes.Farm = []
       let partfieldCounter = 0
 
-      for (const feature of geojson.features) {
+      const featuresToExport = selectedOnly && geojsonStore.selectedCount > 0
+        ? geojsonStore.selectedFeatures
+        : geojson.features
+
+      for (const feature of featuresToExport) {
         if (feature.geometry?.type === "Polygon" || feature.geometry?.type === "MultiPolygon") {
           const geoIdStr = feature.properties?.geo_id?.toString() || ""
 

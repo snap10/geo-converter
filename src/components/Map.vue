@@ -8,22 +8,33 @@
       @ready="onMapReady"
     >
       <l-tile-layer :url="data.url" layer-type="base" name="OpenStreetMap" />
-      <l-geo-json :geojson="geojson" :options="data.options" />
+      <l-geo-json :geojson="filteredGeoJson" :options="data.options" />
     </l-map>
   </main>
 </template>
 
 <script setup lang="ts">
 import { LMap, LTileLayer, LGeoJson } from "@vue-leaflet/vue-leaflet"
-import { ref } from "vue"
+import { ref, computed } from "vue"
 import "leaflet/dist/leaflet.css"
 import type { Map, LatLngBoundsExpression } from "leaflet"
 import { useGeojsonStore } from "@/store/geojson"
 import { useMapStore } from "@/store/map"
 
-const { geojson } = toRefs(useGeojsonStore())
+const geojsonStore = useGeojsonStore()
 const mapStore = useMapStore()
 const mapRef = ref(null)
+
+const filteredGeoJson = computed(() => {
+  if (geojsonStore.selectedCount === 0) {
+    // Show nothing when nothing is selected
+    return { type: "FeatureCollection", features: [] }
+  }
+  return {
+    type: "FeatureCollection",
+    features: geojsonStore.selectedFeatures
+  }
+})
 
 // Reference to the geoJson layer to access individual feature layers
 const geoJsonLayer = ref<LGeoJson | null>(null)
@@ -61,58 +72,22 @@ function zoomToFeature(feature: any) {
   }
 }
 
-// Function to generate a color from a string (like upload_id)
 function getColorFromString(str: string): string {
   let hash = 0
   for (let i = 0; i < str.length; i++) {
     hash = str.charCodeAt(i) + ((hash << 5) - hash)
   }
-  // Convert hash to a color
   const c = (hash & 0x00FFFFFF).toString(16).toUpperCase()
   return `#${"00000".substring(0, 6 - c.length)}${c}`
 }
 
-// Function to adjust color brightness for better contrast
-function getContrastColor(hexColor: string): string {
-  // Remove the # if present
-  const cleanHex = hexColor.replace("#", "")
+// Consistent stroke color (dark blue like header)
+const STROKE_COLOR = "#1e3a5f"
 
-  // Convert to RGB
-  const r = parseInt(cleanHex.substr(0, 2), 16)
-  const g = parseInt(cleanHex.substr(2, 2), 16)
-  const b = parseInt(cleanHex.substr(4, 2), 16)
-
-  // Calculate brightness
-  const brightness = (r * 299 + g * 587 + b * 114) / 1000
-
-  // Return black for bright colors, white for dark colors
-  return brightness > 125 ? "#000000" : "#FFFFFF"
-}
-
-// Function to get color based on operation type
-function getOperationColor(operation: string | undefined): string {
-  if (!operation) { return "#ff7800" } // Default orange
-
-  const operationColors: Record<string, string> = {
-    "Operation A": "#ff0000", // Red
-    "Operation B": "#00ff00", // Green
-    "Operation C": "#0000ff", // Blue
-  }
-
-  return operationColors[operation] || "#ff7800"
-}
-
-// Function to get border color based on area
-function getBorderColorFromArea(areaHa: number | undefined): string {
-  if (!areaHa) { return "#000000" } // Default black
-
-  if (areaHa > 100) {
-    return "#8B0000" // Dark red for large areas
-  } else if (areaHa > 50) {
-    return "#FF8C00" // Dark orange for medium areas
-  } else {
-    return "#000000" // Default black for small areas
-  }
+function getFarmColor(farmId: string | undefined): string {
+  if (!farmId) return "#3388ff"
+  const farm = geojsonStore.farmInfo.find(f => f.id === farmId)
+  return farm?.color || "#3388ff"
 }
 
 const data = ref({
@@ -126,37 +101,21 @@ const data = ref({
         layer.bindPopup(`Name: ${feature.properties.partfieldDesignator}</br>Area: ${feature.properties.partfieldArea} ha</br>Farm: ${feature.properties.farmName || feature.properties.farmId || feature.properties.ud_id}`)
       }
 
-      // Apply dynamic styling
-      let fillColor = "#ff7800" // Default orange
-      let color = "#000000" // Default black border
+      // Apply dynamic styling based on farm
+      let fillColor = "#3388ff" // Default Leaflet blue
 
-      // Generate consistent color based on upload_id for unique upload visualization
-      if (feature.properties && feature.properties.upload_id) {
-        fillColor = getColorFromString(feature.properties.upload_id)
-        color = getContrastColor(fillColor)
-        console.log("Styling feature with upload_id:", feature.properties.upload_id, "fillColor:", fillColor, "color:", color)
-      } else if (feature.properties) {
-        // Fallback to operation-based coloring if upload_id is not available
-        // Color based on operation type
+      if (feature.properties) {
         if (feature.properties.farmId) {
-          fillColor = getOperationColor(feature.properties.farmId)
+          fillColor = getFarmColor(feature.properties.farmId)
+        } else if (feature.properties.upload_id) {
+          fillColor = getColorFromString(feature.properties.upload_id)
         }
-
-        // Border color based on area
-        if (feature.properties.partfieldArea) {
-          const area = parseFloat(feature.properties.partfieldArea)
-          color = getBorderColorFromArea(area)
-        }
-
-        console.log("Styling feature with operation:", feature.properties.farmId, "fillColor:", fillColor, "color:", color)
-      } else {
-        console.log("Styling feature with no properties, using defaults")
       }
 
       // Apply the styles to the layer
       layer.setStyle({
         fillColor,
-        color,
+        color: STROKE_COLOR,
         weight: 2,
         opacity: 1,
         fillOpacity: 0.7,
