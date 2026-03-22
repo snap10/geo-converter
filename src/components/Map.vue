@@ -27,7 +27,8 @@ const mapRef = ref(null)
 
 const filteredGeoJson = computed(() => {
   if (geojsonStore.selectedCount === 0) {
-    return geojsonStore.geojson
+    // Show nothing when nothing is selected
+    return { type: "FeatureCollection", features: [] }
   }
   return {
     type: "FeatureCollection",

@@ -9,7 +9,10 @@ export {}
 
 declare module '@vue/runtime-core' {
   export interface GlobalComponents {
+    DownloadConfirmDialog: typeof import('./src/components/DownloadConfirmDialog.vue')['default']
+    FeatureEditDialog: typeof import('./src/components/FeatureEditDialog.vue')['default']
     FileUploadPopup: typeof import('./src/components/FileUploadPopup.vue')['default']
+    GeoJsonExportDialog: typeof import('./src/components/GeoJsonExportDialog.vue')['default']
     Header: typeof import('./src/components/Header.vue')['default']
     Map: typeof import('./src/components/Map.vue')['default']
     Toolbox: typeof import('./src/components/Toolbox.vue')['default']

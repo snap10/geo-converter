@@ -157,12 +157,12 @@ describe("useGeojsonStore", () => {
       ])
       
       const featureId = store.geojson.features[0].properties.feature_id
+      // Feature is auto-selected on add, so toggle deselects it
+      store.toggleSelection(featureId)
+      expect(store.isFeatureSelected(featureId)).toBe(false)
       
       store.toggleSelection(featureId)
       expect(store.isFeatureSelected(featureId)).toBe(true)
-      
-      store.toggleSelection(featureId)
-      expect(store.isFeatureSelected(featureId)).toBe(false)
     })
 
     it("should select all features", () => {
@@ -203,6 +203,8 @@ describe("useGeojsonStore", () => {
         { type: "Feature", geometry: {}, properties: { farmId: "FRM2" } }
       ])
       
+      // All features are auto-selected on add, so deselect all first
+      store.deselectAll()
       store.selectByFarm("FRM1")
       expect(store.selectedCount).toBe(2)
     })
@@ -230,11 +232,13 @@ describe("useGeojsonStore", () => {
         { type: "Feature", geometry: {}, properties: { farmId: "FRM1" } }
       ])
       
-      store.toggleFarmSelection("FRM1")
-      expect(store.selectedCount).toBe(2)
-      
+      // All features are auto-selected, so first toggle deselects them
       store.toggleFarmSelection("FRM1")
       expect(store.selectedCount).toBe(0)
+      
+      // Second toggle selects them again
+      store.toggleFarmSelection("FRM1")
+      expect(store.selectedCount).toBe(2)
     })
 
     it("should return selected features", () => {
@@ -246,6 +250,8 @@ describe("useGeojsonStore", () => {
         { type: "Feature", geometry: { type: "Polygon" }, properties: { name: "Field 3" } }
       ])
       
+      // All features are auto-selected, so deselect all first
+      store.deselectAll()
       store.selectFeature(store.geojson.features[0].properties.feature_id)
       store.selectFeature(store.geojson.features[2].properties.feature_id)
       

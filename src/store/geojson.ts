@@ -106,6 +106,7 @@ export const useGeojsonStore = defineStore("geojson", {
     },
     addFeatures(features: any[]) {
       // Assign a unique feature id to each feature if it doesn't have one
+      const newFeatureIds: string[] = []
       features.forEach(feature => {
         if (!feature.properties) {
           feature.properties = {}
@@ -113,13 +114,18 @@ export const useGeojsonStore = defineStore("geojson", {
         if (!feature.properties.feature_id) {
           feature.properties.feature_id = `feature_${++this.featureIdCounter}`
         }
+        newFeatureIds.push(feature.properties.feature_id)
       })
       const newJson = { ...this.geojson, features: [...this.geojson.features, ...features] }
       this.geojson = newJson
+      // Auto-select all newly added features
+      newFeatureIds.forEach(id => this.selectedFeatureIds.add(id))
       console.log("new", this.geojson)
     },
     setGeoJson(geojson: any) {
       // Assign unique feature ids to features in the new geojson if they don't have one
+      // and select them all
+      this.selectedFeatureIds.clear()
       geojson.features.forEach(feature => {
         if (!feature.properties) {
           feature.properties = {}
@@ -127,6 +133,7 @@ export const useGeojsonStore = defineStore("geojson", {
         if (!feature.properties.feature_id) {
           feature.properties.feature_id = `feature_${++this.featureIdCounter}`
         }
+        this.selectedFeatureIds.add(feature.properties.feature_id)
       })
       this.geojson = geojson
     },

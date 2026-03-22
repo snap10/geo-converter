@@ -131,8 +131,7 @@
                 'cursor-pointer hover:bg-blue-50',
                 isSelected(feature.properties?.feature_id) ? 'bg-blue-100' : ''
               ]"
-              @click="handleRowClick(feature, $event)"
-              @dblclick="openEditDialog(feature)"
+              @click="openEditDialog(feature)"
             >
               <td class="px-4 py-4 whitespace-nowrap" @click.stop>
                 <input
@@ -298,19 +297,8 @@ function isFarmSelected(farmId: string): boolean {
   return farmFeatures.length > 0 && farmFeatures.every(f => store.isFeatureSelected(f.properties?.feature_id))
 }
 
-function handleRowClick(feature: any, event: MouseEvent) {
-  const featureId = feature.properties?.feature_id
-  if (featureId) {
-    store.toggleSelection(featureId)
-  }
-  const evt = new CustomEvent('zoom-to-feature', { 
-    detail: { feature } 
-  })
-  document.dispatchEvent(evt)
-}
-
 function openEditDialog(feature: any) {
-  editingFeature.value = feature
+  editingFeature.value = { ...feature }
   showEditDialog.value = true
 }
 
