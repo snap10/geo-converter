@@ -100,19 +100,6 @@ function getContrastColor(hexColor: string): string {
   return brightness > 125 ? "#000000" : "#FFFFFF"
 }
 
-// Function to get color based on operation type
-function getOperationColor(operation: string | undefined): string {
-  if (!operation) { return "#ff7800" } // Default orange
-
-  const operationColors: Record<string, string> = {
-    "Operation A": "#ff0000", // Red
-    "Operation B": "#00ff00", // Green
-    "Operation C": "#0000ff", // Blue
-  }
-
-  return operationColors[operation] || "#ff7800"
-}
-
 // Function to get border color based on area
 function getBorderColorFromArea(areaHa: number | undefined): string {
   if (!areaHa) { return "#000000" } // Default black
@@ -126,6 +113,13 @@ function getBorderColorFromArea(areaHa: number | undefined): string {
   }
 }
 
+// Function to get farm color (same logic as Toolbox)
+function getFarmColor(farmId: string | undefined): string {
+  if (!farmId) return "#3388ff"
+  if (geojsonStore.farmInfo.length === 1) return "#3388ff"
+  return getColorFromString(farmId)
+}
+
 const data = ref({
   zoom: 12,
   center: [48.190, 9.89] as L.PointExpression,
@@ -137,20 +131,15 @@ const data = ref({
         layer.bindPopup(`Name: ${feature.properties.partfieldDesignator}</br>Area: ${feature.properties.partfieldArea} ha</br>Farm: ${feature.properties.farmName || feature.properties.farmId || feature.properties.ud_id}`)
       }
 
-      // Apply dynamic styling
-      let fillColor = "#ff7800" // Default orange
+      // Apply dynamic styling based on farm
+      let fillColor = "#3388ff" // Default Leaflet blue
       let color = "#000000" // Default black border
 
-      // Generate consistent color based on upload_id for unique upload visualization
-      if (feature.properties && feature.properties.upload_id) {
-        fillColor = getColorFromString(feature.properties.upload_id)
-        color = getContrastColor(fillColor)
-        console.log("Styling feature with upload_id:", feature.properties.upload_id, "fillColor:", fillColor, "color:", color)
-      } else if (feature.properties) {
-        // Fallback to operation-based coloring if upload_id is not available
-        // Color based on operation type
+      if (feature.properties) {
         if (feature.properties.farmId) {
-          fillColor = getOperationColor(feature.properties.farmId)
+          fillColor = getFarmColor(feature.properties.farmId)
+        } else if (feature.properties.upload_id) {
+          fillColor = getColorFromString(feature.properties.upload_id)
         }
 
         // Border color based on area
@@ -158,10 +147,6 @@ const data = ref({
           const area = parseFloat(feature.properties.partfieldArea)
           color = getBorderColorFromArea(area)
         }
-
-        console.log("Styling feature with operation:", feature.properties.farmId, "fillColor:", fillColor, "color:", color)
-      } else {
-        console.log("Styling feature with no properties, using defaults")
       }
 
       // Apply the styles to the layer
