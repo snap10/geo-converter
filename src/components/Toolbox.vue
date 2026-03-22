@@ -312,7 +312,8 @@ function getFarmFeatureCount(farmId: string): number {
 }
 
 function getFarmColor(farmId: string): string {
-  if (!farmId) return "#ff7800"
+  if (!farmId) return "#3388ff"
+  if (store.farmInfo.length === 1) return "#3388ff"
   return getColorFromString(farmId)
 }
 
