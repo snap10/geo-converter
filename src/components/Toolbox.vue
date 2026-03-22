@@ -277,7 +277,7 @@ const loadShapeZipFile = function() {
     reader.onload = (event) => {
       const fileContent = event?.target?.result
       const geojson = store.parseShapeToGeoJsonWithResult(fileContent)
-      if (geojson) {
+      if (geojson && geojson.features) {
         const geoIds = extractGeoIds(geojson.features)
         const duplicateGeoIds = store.getDuplicateFarmIds(geoIds)
         const uploadId = store.addUpload(fileName, "shapefile", geojson.features.length, geoIds)
@@ -312,7 +312,7 @@ const loadIsoXmlFile = function() {
     reader.onload = (event) => {
       const fileContent = event?.target?.result
       const geojson = isoxmlStore.parseAsGeoJsonWithResult(fileContent, f.type)
-      if (geojson) {
+      if (geojson && geojson.features) {
         const geoIds = extractGeoIds(geojson.features)
         const duplicateGeoIds = store.getDuplicateFarmIds(geoIds)
         const uploadId = store.addUpload(fileName, "isoxml", geojson.features.length, geoIds)
