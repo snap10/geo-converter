@@ -142,8 +142,8 @@
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-200">
-            <tr 
-              v-for="(feature, index) in store.geojson.features" 
+            <tr
+              v-for="(feature, index) in store.geojson.features"
               :key="index"
               :class="[
                 'cursor-pointer hover:bg-blue-50',
@@ -257,13 +257,13 @@ function getContrastColor(hexColor: string): string {
 
 function getOperationColor(operation: string | undefined): string {
   if (!operation) { return "#ff7800" }
-  
+
   const operationColors: Record<string, string> = {
     "Operation A": "#ff0000",
     "Operation B": "#00ff00",
     "Operation C": "#0000ff",
   }
-  
+
   return operationColors[operation] || "#ff7800"
 }
 
@@ -310,12 +310,6 @@ function isFarmPartiallySelected(farmId: string): boolean {
 
 function getFarmFeatureCount(farmId: string): number {
   return store.geojson.features.filter(f => f.properties?.farmId === farmId).length
-}
-
-function getFarmColor(farmId: string): string {
-  if (!farmId) return "#3388ff"
-  if (store.farmInfo.length === 1) return "#3388ff"
-  return getColorFromString(farmId)
 }
 
 function openEditDialog(feature: any) {
