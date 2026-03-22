@@ -100,16 +100,16 @@ export const useIsoXmlStore = defineStore("isoxml", {
         let customerName = customerEntity?.attributes?.CustomerLastName || customerEntity?.attributes?.CustomerName
         let farmName = farmEntity?.attributes?.FarmDesignator || farmEntity?.attributes?.FarmName
         
-        if (customerName === "undefined" || !customerName) {
-          const xmlRef = taskManager.xmlReferences?.get(customerRef?.xmlId)
-          if (xmlRef?.attributes) {
-            customerName = xmlRef.attributes.CustomerLastName || xmlRef.attributes.CustomerName
+        if ((customerName === "undefined" || !customerName) && customerRef?.xmlId) {
+          const foundCustomer = customers.find(c => c.attributes.CustomerId === customerRef.xmlId)
+          if (foundCustomer) {
+            customerName = foundCustomer.attributes.CustomerLastName || foundCustomer.attributes.CustomerFirstName
           }
         }
-        if (farmName === "undefined" || !farmName) {
-          const xmlRef = taskManager.xmlReferences?.get(farmRef?.xmlId)
-          if (xmlRef?.attributes) {
-            farmName = xmlRef.attributes.FarmDesignator || xmlRef.attributes.FarmName
+        if ((farmName === "undefined" || !farmName) && farmRef?.xmlId) {
+          const foundFarm = farms.find(f => f.attributes.FarmId === farmRef.xmlId)
+          if (foundFarm) {
+            farmName = foundFarm.attributes.FarmDesignator || foundFarm.attributes.FarmCity
           }
         }
         
