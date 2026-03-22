@@ -25,6 +25,9 @@ export const useGeojsonStore = defineStore("geojson", {
     addFeatures(features: any[]) {
       // Assign a unique feature id to each feature if it doesn't have one
       features.forEach(feature => {
+        if (!feature.properties) {
+          feature.properties = {}
+        }
         if (!feature.properties.feature_id) {
           feature.properties.feature_id = `feature_${++this.featureIdCounter}`
         }
@@ -36,6 +39,9 @@ export const useGeojsonStore = defineStore("geojson", {
     setGeoJson(geojson: any) {
       // Assign unique feature ids to features in the new geojson if they don't have one
       geojson.features.forEach(feature => {
+        if (!feature.properties) {
+          feature.properties = {}
+        }
         if (!feature.properties.feature_id) {
           feature.properties.feature_id = `feature_${++this.featureIdCounter}`
         }
