@@ -96,6 +96,13 @@
       @resolve="handleDuplicateResolve"
       @cancel="handleDuplicateCancel"
     />
+    <shapefile-import-dialog
+      :is-open="showShapefileImportDialog"
+      :features="shapefileImportFeatures"
+      :feature-count="shapefileImportFeatures.length"
+      @import="handleShapefileImport"
+      @cancel="cancelShapefileImport"
+    />
     <div>
       <div class="flex items-center justify-between mb-4">
         <h4 class="text-xl font-bold">
@@ -236,6 +243,7 @@ import { ref, computed } from "vue"
 import FeatureEditDialog from "./FeatureEditDialog.vue"
 import FarmDuplicateDialog from "./FarmDuplicateDialog.vue"
 import ConfirmDialog from "./ConfirmDialog.vue"
+import ShapefileImportDialog from "./ShapefileImportDialog.vue"
 import type { Upload } from "@/store/geojson"
 import { useGeojsonStore } from "@/store/geojson"
 import { useIsoXmlStore } from "@/store/isoxml"
@@ -250,11 +258,70 @@ const editingFeature = ref<any>(null)
 const showDeleteConfirm = ref(false)
 const uploadToDelete = ref<Upload | null>(null)
 const pendingFeatures = ref<{ features: any[]; uploadId: string } | null>(null)
+const showShapefileImportDialog = ref(false)
+const shapefileImportFeatures = ref<any[]>([])
+const shapefileImportPendingFileName = ref("")
+
+const handleShapefileImport = (mappings: { source: string; target: string }[]) => {
+  if (shapefileImportFeatures.value.length === 0) return
+  
+  const fileName = shapefileImportPendingFileName.value
+  const features = shapefileImportFeatures.value.map(feature => {
+    const newFeature = { ...feature, properties: { ...feature.properties } }
+    mappings.forEach(mapping => {
+      if (mapping.source && mapping.target && newFeature.properties[mapping.source] !== undefined) {
+        newFeature.properties[mapping.target] = newFeature.properties[mapping.source]
+      }
+    })
+    return newFeature
+  })
+  
+  const newFeatures = extractDuplicateFeatures(features)
+  const duplicateGeoIds = store.getDuplicateGeoIds(newFeatures.map(f => f.geo_id))
+  
+  if (duplicateGeoIds.length > 0 && store.geojson.features.length > 0) {
+    const uploadId = store.addUpload(fileName, "shapefile", features.length, newFeatures.map(f => f.geo_id))
+    const existingUpload = store.uploads.find(u => u.id !== uploadId)
+    if (existingUpload) {
+      const existingFeatures = getExistingDuplicateFeatures(store.geojson.features, duplicateGeoIds)
+      const newDuplicateFeatures = newFeatures.filter(f => duplicateGeoIds.includes(f.geo_id))
+      store.addPendingDuplicate(
+        existingUpload,
+        store.getUploadById(uploadId)!,
+        existingFeatures,
+        newDuplicateFeatures
+      )
+      pendingFeatures.value = { features, uploadId }
+    } else {
+      store.addShapeFeatures(features, uploadId)
+    }
+  } else {
+    const uploadId = store.addUpload(fileName, "shapefile", features.length, newFeatures.map(f => f.geo_id))
+    store.addShapeFeatures(features, uploadId)
+  }
+  
+  showShapefileImportDialog.value = false
+  shapefileImportFeatures.value = []
+  shapefileImportPendingFileName.value = ""
+}
+
+const cancelShapefileImport = () => {
+  showShapefileImportDialog.value = false
+  shapefileImportFeatures.value = []
+  shapefileImportPendingFileName.value = ""
+}
 
 const currentDuplicate = computed(() => 
   store.pendingDuplicates.length > 0 ? store.pendingDuplicates[0] : null
 )
 const showDuplicateDialog = computed(() => store.hasPendingDuplicates())
+
+const getFeatureName = (feature: any): string | undefined => {
+  return feature.properties?.partfieldDesignator 
+    || feature.properties?.bez 
+    || feature.properties?.name 
+    || feature.properties?.feature_id
+}
 
 const extractDuplicateFeatures = (features: any[]): { geo_id: string; partfieldDesignator?: string }[] => {
   const featuresByGeoId = new Map<string, { geo_id: string; partfieldDesignator?: string }>()
@@ -263,7 +330,7 @@ const extractDuplicateFeatures = (features: any[]): { geo_id: string; partfieldD
     if (geoId) {
       featuresByGeoId.set(geoId, {
         geo_id: geoId,
-        partfieldDesignator: feature.properties?.partfieldDesignator
+        partfieldDesignator: getFeatureName(feature)
       })
     }
   })
@@ -275,7 +342,7 @@ const getExistingDuplicateFeatures = (features: any[], duplicateGeoIds: string[]
     .filter(f => duplicateGeoIds.includes(f.properties?.geo_id))
     .map(f => ({
       geo_id: f.properties.geo_id,
-      partfieldDesignator: f.properties?.partfieldDesignator
+      partfieldDesignator: getFeatureName(f)
     }))
 }
 
@@ -285,35 +352,16 @@ const loadShapeZipFile = function() {
   console.log("file", f)
   if (f) {
     const fileName = f.name
+    shapefileImportFileName.value = fileName
     const reader = new FileReader()
     reader.readAsArrayBuffer(f)
     reader.onload = async (event) => {
       const fileContent = event?.target?.result
       const geojson = await store.parseShapeToGeoJsonWithResult(fileContent)
       if (geojson && geojson.features) {
-        const newFeatures = extractDuplicateFeatures(geojson.features)
-        const duplicateGeoIds = store.getDuplicateGeoIds(newFeatures.map(f => f.geo_id))
-        
-        if (duplicateGeoIds.length > 0 && store.geojson.features.length > 0) {
-          const uploadId = store.addUpload(fileName, "shapefile", geojson.features.length, newFeatures.map(f => f.geo_id))
-          const existingUpload = store.uploads.find(u => u.id !== uploadId)
-          if (existingUpload) {
-            const existingFeatures = getExistingDuplicateFeatures(store.geojson.features, duplicateGeoIds)
-            const newDuplicateFeatures = newFeatures.filter(f => duplicateGeoIds.includes(f.geo_id))
-            store.addPendingDuplicate(
-              existingUpload,
-              store.getUploadById(uploadId)!,
-              existingFeatures,
-              newDuplicateFeatures
-            )
-            pendingFeatures.value = { features: geojson.features, uploadId }
-          } else {
-            store.addShapeFeatures(geojson.features, uploadId)
-          }
-        } else {
-          const uploadId = store.addUpload(fileName, "shapefile", geojson.features.length, newFeatures.map(f => f.geo_id))
-          store.addShapeFeatures(geojson.features, uploadId)
-        }
+        shapefileImportFeatures.value = geojson.features
+        shapefileImportPendingFileName.value = fileName
+        showShapefileImportDialog.value = true
       }
     }
   } else {
@@ -393,16 +441,13 @@ const handleDuplicateResolve = (action: "keep_existing" | "keep_new" | "keep_bot
     const duplicate = store.pendingDuplicates[0]
     
     if (action === "keep_existing") {
-      // Remove new upload but don't add new features
       store.removeUpload(duplicate.newUpload.id)
     } else if (action === "keep_new") {
-      // Remove existing, add new features
       store.removeUpload(duplicate.existingUpload.id)
       if (pendingFeatures.value) {
         isoxmlStore.addIsoXmlFeatures(pendingFeatures.value.features, pendingFeatures.value.uploadId, store.featureIdCounter)
       }
     } else if (action === "keep_both") {
-      // Add new features (with renamed IDs handled elsewhere)
       if (pendingFeatures.value) {
         isoxmlStore.addIsoXmlFeatures(pendingFeatures.value.features, pendingFeatures.value.uploadId, store.featureIdCounter)
       }

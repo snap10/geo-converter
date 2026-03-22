@@ -17,6 +17,7 @@ declare module '@vue/runtime-core' {
     GeoJsonExportDialog: typeof import('./src/components/GeoJsonExportDialog.vue')['default']
     Header: typeof import('./src/components/Header.vue')['default']
     Map: typeof import('./src/components/Map.vue')['default']
+    ShapefileImportDialog: typeof import('./src/components/ShapefileImportDialog.vue')['default']
     Toolbox: typeof import('./src/components/Toolbox.vue')['default']
   }
 }
