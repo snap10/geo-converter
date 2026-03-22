@@ -27,30 +27,43 @@ export const useIsoXmlStore = defineStore("isoxml", {
 
       for (const feature of geojson.features) {
         if (feature.geometry?.type === "Polygon" || feature.geometry?.type === "MultiPolygon") {
-          // Trim geo_id to max 14 characters for PartfieldCode
           const geoIdStr = feature.properties?.geo_id?.toString() || ""
-          const trimmedGeoId = geoIdStr.substring(0, 14)
-          // For PartfieldId, we have "PFD" prefix (3 chars) + max 11 chars from geo_id to keep total <= 14
-          const trimmedGeoIdForPartFieldId = geoIdStr.substring(0, 11)
-
+          
+          // PartfieldId: PFD- prefix (4 chars) + numeric suffix, max 14 chars total
+          // Pattern: (PFD|PFD-)([0-9])+ - must be numeric after PFD-
+          const numericSuffix = geoIdStr.replace(/[^0-9]/g, "").substring(0, 10) || "1"
+          const partfieldId = `PFD-${numericSuffix}`.substring(0, 14)
+          
+          // PartfieldCode: max 32 chars
+          const partfieldCode = geoIdStr.substring(0, 32)
+          
+          // PartfieldDesignator: max 32 chars
+          const partfieldDesignator = (feature.properties?.bez || "").substring(0, 32)
+          
+          // PartfieldArea: in m² (flaeche_ha is in hectares, multiply by 10000)
+          const areaHa = parseFloat(feature.properties?.flaeche_ha) || 0
+          const areaM2 = Math.round(areaHa * 10000)
+          
           // create a Partfield
           const partfield = taskManager.createEntityFromAttributes(isoxml.TAGS.Partfield, {
-            PartfieldId: `PFD${trimmedGeoIdForPartFieldId}`,
-            PartfieldDesignator: feature.properties?.bez,
-            PartfieldCode: trimmedGeoId,
+            PartfieldId: partfieldId,
+            PartfieldDesignator: partfieldDesignator,
+            PartfieldCode: partfieldCode,
+            PartfieldArea: areaM2,
           })
 
           partfield.boundaryFromGeoJSON(feature.geometry, taskManager)
+          
           const farmId = getOrCreateFarmXmlRef(taskManager, feature.properties?.betriebName)
-          console.log("FarmRef", farmId, feature.properties?.betriebName)
           if (farmId) {
             partfield.attributes.FarmIdRef = farmId
           }
+          
           const customerId = getOrCreateCustomerXmlRef(taskManager, feature.properties?.kundenName)
-          console.log("CustomerRef", customerId, feature.properties?.kundenName)
           if (customerId) {
             partfield.attributes.CustomerIdRef = customerId
           }
+          
           partFields.push(partfield)
         } else {
           console.warn("Feature is not of subtype polygon", feature)
@@ -94,26 +107,33 @@ export const useIsoXmlStore = defineStore("isoxml", {
 })
 
 function getOrCreateCustomerXmlRef(taskManager: any, name: string | undefined): any {
-  const customer = taskManager.rootElement.attributes.Customer?.find(c => c.attributes.CustomerLastName == (name || "unbekannt"))
+  const customerName = name || "unbekannt"
+  const customer = taskManager.rootElement.attributes.Customer?.find(c => c.attributes.CustomerLastName == customerName)
   if (customer) {
-    console.log("found customer", customer)
     return taskManager.getReferenceByEntity(customer)
   }
-  const entity = taskManager.createEntityFromAttributes(isoxmlModule?.TAGS.Customer, { CustomerLastName: (name || "unbekannt") })
+  // CustomerId pattern: (CTR|CTR-)([0-9])+, max 14 chars
+  const customerId = `CTR-${taskManager.rootElement.attributes.Customer?.length || 1}`
+  const entity = taskManager.createEntityFromAttributes(isoxmlModule?.TAGS.Customer, { 
+    CustomerId: customerId,
+    CustomerLastName: customerName 
+  })
   taskManager.rootElement.attributes.Customer?.push(entity)
-  console.log("new customer", taskManager.rootElement.attributes.Customer)
   return taskManager.registerEntity(entity)
 }
 
-function getOrCreateFarmXmlRef(taskManager: any, name: string): any {
-  const farm = taskManager.rootElement.attributes.Farm?.find(c => c.attributes.FarmDesignator == name)
+function getOrCreateFarmXmlRef(taskManager: any, name: string | undefined): any {
+  const farmName = name || "unbekannt"
+  const farm = taskManager.rootElement.attributes.Farm?.find(c => c.attributes.FarmDesignator == farmName)
   if (farm) {
-    console.log("found farm", farm)
     return taskManager.getReferenceByEntity(farm)
   }
-  const entity = taskManager.createEntityFromAttributes(isoxmlModule?.TAGS.Farm, { FarmDesignator: name })
+  // FarmId pattern: (FRM|FRM-)([0-9])+, max 14 chars
+  const farmId = `FRM-${taskManager.rootElement.attributes.Farm?.length || 1}`
+  const entity = taskManager.createEntityFromAttributes(isoxmlModule?.TAGS.Farm, { 
+    FarmId: farmId,
+    FarmDesignator: farmName 
+  })
   taskManager.rootElement.attributes.Farm?.push(entity)
-  console.log("new farm", taskManager.rootElement.attributes.Farm)
-
   return taskManager.registerEntity(entity)
 }
