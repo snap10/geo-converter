@@ -16,7 +16,7 @@
         </button>
       </div>
     </header>
-    <div class="flex-1 overflow-hidden h-full">
+    <div class="flex-1 overflow-hidden min-h-0">
       <slot />
     </div>
     <footer class="bg-gray-900 text-gray-400 py-3 px-8 text-sm shrink-0">

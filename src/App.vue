@@ -1,6 +1,6 @@
 <template>
   <Header>
-    <div class="flex h-full">
+    <div class="flex min-h-0 h-full">
       <Toolbox />
       <Map />
     </div>
