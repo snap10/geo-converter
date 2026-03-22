@@ -71,6 +71,9 @@
                 No.
               </th>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Color
+              </th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Name
               </th>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -82,9 +85,33 @@
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-200">
-            <tr v-for="(feature, index) in store.geojson.features" :key="index">
+            <tr 
+              v-for="(feature, index) in store.geojson.features" 
+              :key="index"
+              @click="zoomToFeature(feature)"
+              class="cursor-pointer hover:bg-gray-100"
+            >
               <td class="px-6 py-4 whitespace-nowrap">
                 {{ index + 1 }}
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap">
+                <div class="flex items-center space-x-2">
+                  <div 
+                    v-if="feature.properties.upload_id"
+                    class="w-3 h-3 rounded-full" 
+                    :style="{ backgroundColor: getColorFromString(feature.properties.upload_id), border: '1px solid ' + getContrastColor(getColorFromString(feature.properties.upload_id)) }"
+                  ></div>
+                  <div 
+                    v-else-if="feature.properties.betrieb"
+                    class="w-3 h-3 rounded-full" 
+                    :style="{ backgroundColor: getOperationColor(feature.properties.betrieb), border: '1px solid #000000' }"
+                  ></div>
+                  <div 
+                    v-else
+                    class="w-3 h-3 rounded-full" 
+                    style="backgroundColor: #ff7800; border: 1px solid #000000"
+                  ></div>
+                </div>
               </td>
               <td class="px-6 py-4 whitespace-nowrap">
                 {{ feature.properties.bez }}
@@ -102,13 +129,16 @@
     </div>
   </aside>
 </template>
+
 <script setup lang="ts">
 import { useGeojsonStore } from "@/store/geojson"
 import { useIsoXmlStore } from "@/store/isoxml"
+import { ref } from "vue"
 
 const shapeFileInput = ref(null)
 const store = useGeojsonStore()
 const isoxmlStore = useIsoXmlStore()
+
 const loadShapeZipFile = function() {
   console.log("fileInput", shapeFileInput)
   const f = shapeFileInput?.value?.files[0]
@@ -146,5 +176,55 @@ const loadIsoXmlFile = function() {
   } else {
     console.error("No file found", f)
   }
+}
+
+// Function to generate a color from a string (like upload_id)
+function getColorFromString(str: string): string {
+  let hash = 0
+  for (let i = 0; i < str.length; i++) {
+    hash = str.charCodeAt(i) + ((hash << 5) - hash)
+  }
+  // Convert hash to a color
+  const c = (hash & 0x00FFFFFF).toString(16).toUpperCase()
+  return `#${"00000".substring(0, 6 - c.length)}${c}`
+}
+
+// Function to adjust color brightness for better contrast
+function getContrastColor(hexColor: string): string {
+  // Remove the # if present
+  const cleanHex = hexColor.replace("#", "")
+  
+  // Convert to RGB
+  const r = parseInt(cleanHex.substr(0, 2), 16)
+  const g = parseInt(cleanHex.substr(2, 2), 16)
+  const b = parseInt(cleanHex.substr(4, 2), 16)
+  
+  // Calculate brightness
+  const brightness = (r * 299 + g * 587 + b * 114) / 1000
+  
+  // Return black for bright colors, white for dark colors
+  return brightness > 125 ? "#000000" : "#FFFFFF"
+}
+
+// Function to get color based on operation type
+function getOperationColor(operation: string | undefined): string {
+  if (!operation) { return "#ff7800" } // Default orange
+  
+  const operationColors: Record<string, string> = {
+    "Operation A": "#ff0000", // Red
+    "Operation B": "#00ff00", // Green
+    "Operation C": "#0000ff", // Blue
+  }
+  
+  return operationColors[operation] || "#ff7800"
+}
+
+// Emit an event to zoom to a feature (will be handled by parent component)
+const zoomToFeature = (feature: any) => {
+  // Emit custom event that parent can listen to
+  const event = new CustomEvent('zoom-to-feature', { 
+    detail: { feature } 
+  })
+  document.dispatchEvent(event)
 }
 </script>

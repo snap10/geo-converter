@@ -1,10 +1,11 @@
 <template>
   <main id="map" class="flex-1 h-screen">
     <l-map
-      ref="map"
+      ref="mapRef"
       :zoom="data.zoom"
       :center="data.center"
       :use-global-leaflet="false"
+      @mapready="onMapReady"
     >
       <l-tile-layer :url="data.url" layer-type="base" name="OpenStreetMap" />
       <l-geo-json :geojson="geojson" :options="data.options" />
@@ -16,9 +17,47 @@
 import { LMap, LTileLayer, LGeoJson } from "@vue-leaflet/vue-leaflet"
 import { ref } from "vue"
 import "leaflet/dist/leaflet.css"
+import type { Map, LatLngBoundsExpression } from "leaflet"
 import { useGeojsonStore } from "@/store/geojson"
+import { useMapStore } from "@/store/map"
 
 const { geojson } = toRefs(useGeojsonStore())
+const mapStore = useMapStore()
+const mapRef = ref(null)
+
+// Reference to the geoJson layer to access individual feature layers
+const geoJsonLayer = ref<LGeoJson | null>(null)
+
+function onMapReady(map: any) {
+  mapStore.setMap(map)
+}
+
+// Function to zoom to a feature and show its popup
+function zoomToFeature(feature: any) {
+  const map = mapStore.map
+  if (!map || !geoJsonLayer.value) { return }
+  console.log("Click to Zoom")
+  // Find the layer corresponding to this feature
+  // This is a simplified approach - in practice, you'd need to keep a mapping of features to layers
+  // For now, we'll zoom to the feature's bounds and show a popup for the first matching feature
+
+  // Create a temporary geoJSON layer to get bounds
+  const tempLayer = L.geoJSON(feature)
+  const bounds = tempLayer.getBounds() as LatLngBoundsExpression
+
+  // Fit the map to the bounds
+  map.fitBounds(bounds, { padding: [50, 50] })
+
+  // Show popup for this feature (simplified - in practice you'd find the exact layer)
+  if (feature.properties.bez) {
+    // Create a popup content
+    const popupContent = `Name:  ${feature.properties.bez}</br>Fläche: ${feature.properties.flaeche_ha} ha</br>Betrieb: ${feature.properties.betriebName || feature.properties.betrieb || feature.properties.ud_id}`
+
+    // Open a popup at the center of the bounds
+    const center = bounds.getCenter()
+    map.openPopup(popupContent, center)
+  }
+}
 
 // Function to generate a color from a string (like upload_id)
 function getColorFromString(str: string): string {
