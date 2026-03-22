@@ -52,57 +52,107 @@
       </form>
     </div>
     <div>
-      <h4
-        class="text-xl font-bold mb-4"
-      >
-        Felder
-      </h4>
-      <div
-        class="
-        bg-white
-        rounded-lg
-        shadow
-        overflow-x-auto"
-      >
+      <div class="flex items-center justify-between mb-4">
+        <h4 class="text-xl font-bold">
+          Felder
+        </h4>
+        <span class="text-sm text-gray-600">
+          {{ store.selectedCount }} / {{ store.geojson.features.length }} ausgewählt
+        </span>
+      </div>
+      <div class="bg-white rounded-lg shadow overflow-x-auto">
         <table class="min-w-full divide-y divide-gray-200">
           <thead class="bg-gray-50">
             <tr>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th class="px-4 py-3 text-left">
+                <input
+                  type="checkbox"
+                  :checked="store.allSelected"
+                  :indeterminate="store.selectedCount > 0 && !store.allSelected"
+                  @change="toggleSelectAll"
+                  class="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                >
+              </th>
+              <th class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 No.
               </th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Color
               </th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Name
               </th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Fläche (ha)
               </th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Betrieb
+              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <div class="relative group inline-block">
+                  <button
+                    type="button"
+                    class="text-xs font-medium text-gray-500 uppercase tracking-wider hover:text-gray-700"
+                    @click="showFarmDropdown = !showFarmDropdown"
+                  >
+                    Betrieb ▼
+                  </button>
+                  <div
+                    v-if="showFarmDropdown"
+                    class="absolute left-0 z-10 mt-1 w-48 bg-white rounded-md shadow-lg border border-gray-200"
+                  >
+                    <div class="py-1">
+                      <button
+                        v-for="farm in store.availableFarms"
+                        :key="farm"
+                        type="button"
+                        class="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 flex items-center justify-between"
+                        @click.stop="toggleFarmSelection(farm)"
+                      >
+                        <span>{{ farm }}</span>
+                        <span v-if="isFarmSelected(farm)" class="text-green-600">✓</span>
+                      </button>
+                      <button
+                        v-if="store.availableFarms.length > 0"
+                        type="button"
+                        class="w-full text-left px-4 py-2 text-sm text-gray-500 hover:bg-gray-100 border-t border-gray-200"
+                        @click.stop="showFarmDropdown = false"
+                      >
+                        Schließen
+                      </button>
+                    </div>
+                  </div>
+                </div>
               </th>
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-200">
-<tr 
-   v-for="(feature, index) in store.geojson.features" 
-   :key="index"
-    @click="console.log('Toolbox row clicked:', feature.properties.partfieldDesignator); zoomToFeature(feature)"
-   class="cursor-pointer hover:bg-gray-100"
->
-              <td class="px-6 py-4 whitespace-nowrap">
+            <tr 
+              v-for="(feature, index) in store.geojson.features" 
+              :key="index"
+              :class="[
+                'cursor-pointer hover:bg-blue-50',
+                isSelected(feature.properties?.feature_id) ? 'bg-blue-100' : ''
+              ]"
+              @click="handleRowClick(feature, $event)"
+            >
+              <td class="px-4 py-4 whitespace-nowrap" @click.stop>
+                <input
+                  type="checkbox"
+                  :checked="isSelected(feature.properties?.feature_id)"
+                  @change="toggleSelection(feature.properties?.feature_id)"
+                  class="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                >
+              </td>
+              <td class="px-2 py-4 whitespace-nowrap">
                 {{ index + 1 }}
               </td>
-              <td class="px-6 py-4 whitespace-nowrap">
+              <td class="px-2 py-4 whitespace-nowrap">
                 <div class="flex items-center space-x-2">
                   <div 
-                    v-if="feature.properties.upload_id"
+                    v-if="feature.properties?.upload_id"
                     class="w-3 h-3 rounded-full" 
                     :style="{ backgroundColor: getColorFromString(feature.properties.upload_id), border: '1px solid ' + getContrastColor(getColorFromString(feature.properties.upload_id)) }"
                   ></div>
                   <div 
-                    v-else-if="feature.properties.farmId"
+                    v-else-if="feature.properties?.farmId"
                     class="w-3 h-3 rounded-full" 
                     :style="{ backgroundColor: getOperationColor(feature.properties.farmId), border: '1px solid #000000' }"
                   ></div>
@@ -113,14 +163,14 @@
                   ></div>
                 </div>
               </td>
-              <td class="px-6 py-4 whitespace-nowrap">
-                {{ feature.properties.partfieldDesignator }}
+              <td class="px-4 py-4 whitespace-nowrap">
+                {{ feature.properties?.partfieldDesignator || feature.properties?.feature_id }}
               </td>
-              <td class="px-6 py-4 whitespace-nowrap">
-                {{ feature.properties.partfieldArea }}
+              <td class="px-4 py-4 whitespace-nowrap">
+                {{ feature.properties?.partfieldArea }}
               </td>
-              <td class="px-6 py-4 whitespace-nowrap">
-                {{ feature.properties.farmName || feature.properties.farmId || feature.properties.ud_id }}
+              <td class="px-4 py-4 whitespace-nowrap">
+                {{ feature.properties?.farmName || feature.properties?.farmId || feature.properties?.ud_id }}
               </td>
             </tr>
           </tbody>
@@ -138,6 +188,7 @@ import { ref } from "vue"
 const shapeFileInput = ref(null)
 const store = useGeojsonStore()
 const isoxmlStore = useIsoXmlStore()
+const showFarmDropdown = ref(false)
 
 const loadShapeZipFile = function() {
   console.log("fileInput", shapeFileInput)
@@ -178,54 +229,73 @@ const loadIsoXmlFile = function() {
   }
 }
 
-// Function to generate a color from a string (like upload_id)
 function getColorFromString(str: string): string {
   let hash = 0
   for (let i = 0; i < str.length; i++) {
     hash = str.charCodeAt(i) + ((hash << 5) - hash)
   }
-  // Convert hash to a color
   const c = (hash & 0x00FFFFFF).toString(16).toUpperCase()
   return `#${"00000".substring(0, 6 - c.length)}${c}`
 }
 
-// Function to adjust color brightness for better contrast
 function getContrastColor(hexColor: string): string {
-  // Remove the # if present
   const cleanHex = hexColor.replace("#", "")
-  
-  // Convert to RGB
   const r = parseInt(cleanHex.substr(0, 2), 16)
   const g = parseInt(cleanHex.substr(2, 2), 16)
   const b = parseInt(cleanHex.substr(4, 2), 16)
-  
-  // Calculate brightness
   const brightness = (r * 299 + g * 587 + b * 114) / 1000
-  
-  // Return black for bright colors, white for dark colors
   return brightness > 125 ? "#000000" : "#FFFFFF"
 }
 
-// Function to get color based on operation type
 function getOperationColor(operation: string | undefined): string {
-  if (!operation) { return "#ff7800" } // Default orange
+  if (!operation) { return "#ff7800" }
   
   const operationColors: Record<string, string> = {
-    "Operation A": "#ff0000", // Red
-    "Operation B": "#00ff00", // Green
-    "Operation C": "#0000ff", // Blue
+    "Operation A": "#ff0000",
+    "Operation B": "#00ff00",
+    "Operation C": "#0000ff",
   }
   
   return operationColors[operation] || "#ff7800"
 }
 
-// Emit an event to zoom to a feature (will be handled by parent component)
-const zoomToFeature = (feature: any) => {
-  console.log("Toolbox: Clicked on feature:", feature.properties.partfieldDesignator || feature.properties.feature_id)
-  // Emit custom event that parent can listen to
-  const event = new CustomEvent('zoom-to-feature', { 
+function isSelected(featureId: string | undefined): boolean {
+  if (!featureId) return false
+  return store.isFeatureSelected(featureId)
+}
+
+function toggleSelectAll() {
+  if (store.allSelected) {
+    store.deselectAll()
+  } else {
+    store.selectAll()
+  }
+}
+
+function toggleSelection(featureId: string | undefined) {
+  if (featureId) {
+    store.toggleSelection(featureId)
+  }
+}
+
+function toggleFarmSelection(farmId: string) {
+  store.toggleFarmSelection(farmId)
+  showFarmDropdown.value = false
+}
+
+function isFarmSelected(farmId: string): boolean {
+  const farmFeatures = store.geojson.features.filter(f => f.properties?.farmId === farmId)
+  return farmFeatures.length > 0 && farmFeatures.every(f => store.isFeatureSelected(f.properties?.feature_id))
+}
+
+function handleRowClick(feature: any, event: MouseEvent) {
+  const featureId = feature.properties?.feature_id
+  if (featureId) {
+    store.toggleSelection(featureId)
+  }
+  const evt = new CustomEvent('zoom-to-feature', { 
     detail: { feature } 
   })
-  document.dispatchEvent(event)
+  document.dispatchEvent(evt)
 }
 </script>

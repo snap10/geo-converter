@@ -8,22 +8,32 @@
       @ready="onMapReady"
     >
       <l-tile-layer :url="data.url" layer-type="base" name="OpenStreetMap" />
-      <l-geo-json :geojson="geojson" :options="data.options" />
+      <l-geo-json :geojson="filteredGeoJson" :options="data.options" />
     </l-map>
   </main>
 </template>
 
 <script setup lang="ts">
 import { LMap, LTileLayer, LGeoJson } from "@vue-leaflet/vue-leaflet"
-import { ref } from "vue"
+import { ref, computed } from "vue"
 import "leaflet/dist/leaflet.css"
 import type { Map, LatLngBoundsExpression } from "leaflet"
 import { useGeojsonStore } from "@/store/geojson"
 import { useMapStore } from "@/store/map"
 
-const { geojson } = toRefs(useGeojsonStore())
+const geojsonStore = useGeojsonStore()
 const mapStore = useMapStore()
 const mapRef = ref(null)
+
+const filteredGeoJson = computed(() => {
+  if (geojsonStore.selectedCount === 0) {
+    return geojsonStore.geojson
+  }
+  return {
+    type: "FeatureCollection",
+    features: geojsonStore.selectedFeatures
+  }
+})
 
 // Reference to the geoJson layer to access individual feature layers
 const geoJsonLayer = ref<LGeoJson | null>(null)
