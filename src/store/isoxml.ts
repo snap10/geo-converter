@@ -53,17 +53,17 @@ export const useIsoXmlStore = defineStore("isoxml", {
           })
 
           partfield.boundaryFromGeoJSON(feature.geometry, taskManager)
-          
+
           const farmId = getOrCreateFarmXmlRef(taskManager, feature.properties?.farmId, feature.properties?.farmName)
           if (farmId) {
             partfield.attributes.FarmIdRef = farmId
           }
-          
+
           const customerId = getOrCreateCustomerXmlRef(taskManager, feature.properties?.customerId, feature.properties?.customerName)
           if (customerId) {
             partfield.attributes.CustomerIdRef = customerId
           }
-          
+
           partFields.push(partfield)
         } else {
           console.warn("Feature is not of subtype polygon", feature)
@@ -85,30 +85,31 @@ export const useIsoXmlStore = defineStore("isoxml", {
 
       const customers = taskManager.rootElement.attributes.Customer || []
       const farms = taskManager.rootElement.attributes.Farm || []
-      
+
       console.log("ISOXML parse - farms found:", farms.map(f => ({ id: f.attributes.FarmId, attrs: f.attributes })))
-      
+
       for (const field of partfields) {
         const feature = { type: "Feature" }
         const geometry = field.toGeoJSON?.()
         feature.geometry = geometry
-        
+
         const customerRef = field.attributes.CustomerIdRef
         const farmRef = field.attributes.FarmIdRef
-        
+
         const customerEntity = customerRef?.entity || customers.find(c => c.attributes.CustomerId === customerRef?.xmlId)
+        console.log("customer entity: ", customerEntity)
         const farmEntity = farmRef?.entity || farms.find(f => f.attributes.FarmId === farmRef?.xmlId)
-        
+        console.log("farm entity: ", farmEntity)
         let customerName = customerEntity?.attributes?.CustomerLastName || customerEntity?.attributes?.CustomerName
         let farmName = farmEntity?.attributes?.FarmDesignator || farmEntity?.attributes?.FarmName
-        
+
         if (customerName === "undefined" || !customerName) {
           customerName = customerRef?.xmlId
         }
         if (farmName === "undefined" || !farmName) {
           farmName = farmRef?.xmlId
         }
-        
+
         feature.properties = {
           geo_id: field.attributes?.PartfieldCode,
           partfieldDesignator: field.attributes?.PartfieldDesignator,
@@ -134,13 +135,13 @@ function getOrCreateCustomerXmlRef(taskManager: any, customerId: string | undefi
       return taskManager.getReferenceByEntity(existingCustomer)
     }
   }
-  
+
   const name = customerName || "unbekannt"
   const customer = taskManager.rootElement.attributes.Customer?.find(c => c.attributes.CustomerLastName == name)
   if (customer) {
     return taskManager.getReferenceByEntity(customer)
   }
-  
+
   const newCustomerId = customerId || `CTR${(taskManager.rootElement.attributes.Customer?.length || 0) + 1}`
   const entity = taskManager.createEntityFromAttributes(isoxmlModule?.TAGS.Customer, {
     CustomerId: newCustomerId,
@@ -157,18 +158,19 @@ function getOrCreateFarmXmlRef(taskManager: any, farmId: string | undefined, far
       return taskManager.getReferenceByEntity(existingFarm)
     }
   }
-  
+
   const name = farmName || "unbekannt"
   const farm = taskManager.rootElement.attributes.Farm?.find(f => f.attributes.FarmDesignator == name)
   if (farm) {
     return taskManager.getReferenceByEntity(farm)
   }
-  
+
   const newFarmId = farmId || `FRM${(taskManager.rootElement.attributes.Farm?.length || 0) + 1}`
   const entity = taskManager.createEntityFromAttributes(isoxmlModule?.TAGS.Farm, {
     FarmId: newFarmId,
     FarmDesignator: name,
   })
   taskManager.rootElement.attributes.Farm?.push(entity)
+  console.log("created Farm", entity)
   return taskManager.registerEntity(entity)
 }
