@@ -279,11 +279,11 @@ const loadShapeZipFile = function() {
       const geojson = store.parseShapeToGeoJsonWithResult(fileContent)
       if (geojson && geojson.features) {
         const geoIds = extractGeoIds(geojson.features)
-        const duplicateGeoIds = store.getDuplicateFarmIds(geoIds)
+        const duplicateGeoIds = store.getDuplicateGeoIds(geoIds)
         
-        if (duplicateGeoIds.length > 0 && store.uploads.length > 0) {
-          const existingUpload = store.uploads.find(u => u.farmIds.some(fid => duplicateGeoIds.includes(fid)))
+        if (duplicateGeoIds.length > 0 && store.geojson.features.length > 0) {
           const uploadId = store.addUpload(fileName, "shapefile", geojson.features.length, geoIds)
+          const existingUpload = store.uploads.find(u => u.id !== uploadId)
           if (existingUpload) {
             store.addPendingDuplicate(
               existingUpload,
@@ -315,11 +315,11 @@ const loadIsoXmlFile = function() {
       const geojson = isoxmlStore.parseAsGeoJsonWithResult(fileContent, f.type)
       if (geojson && geojson.features) {
         const geoIds = extractGeoIds(geojson.features)
-        const duplicateGeoIds = store.getDuplicateFarmIds(geoIds)
+        const duplicateGeoIds = store.getDuplicateGeoIds(geoIds)
         
-        if (duplicateGeoIds.length > 0 && store.uploads.length > 0) {
-          const existingUpload = store.uploads.find(u => u.farmIds.some(fid => duplicateGeoIds.includes(fid)))
+        if (duplicateGeoIds.length > 0 && store.geojson.features.length > 0) {
           const uploadId = store.addUpload(fileName, "isoxml", geojson.features.length, geoIds)
+          const existingUpload = store.uploads.find(u => u.id !== uploadId)
           if (existingUpload) {
             store.addPendingDuplicate(
               existingUpload,

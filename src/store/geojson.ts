@@ -255,10 +255,14 @@ export const useGeojsonStore = defineStore("geojson", {
     getUploadById(uploadId: string) {
       return this.uploads.find(u => u.id === uploadId)
     },
-    getDuplicateFarmIds(newFarmIds: string[]): string[] {
-      return newFarmIds.filter(farmId => 
-        this.uploads.some(u => u.farmIds.includes(farmId))
-      )
+    getDuplicateGeoIds(newGeoIds: string[]): string[] {
+      const existingGeoIds = new Set<string>()
+      this.geojson.features.forEach(f => {
+        if (f.properties?.geo_id) {
+          existingGeoIds.add(f.properties.geo_id)
+        }
+      })
+      return newGeoIds.filter(id => existingGeoIds.has(id))
     },
     hasPendingDuplicates(): boolean {
       return this.pendingDuplicates.length > 0
