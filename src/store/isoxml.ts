@@ -30,9 +30,9 @@ export const useIsoXmlStore = defineStore("isoxml", {
         if (feature.geometry?.type === "Polygon" || feature.geometry?.type === "MultiPolygon") {
           const geoIdStr = feature.properties?.geo_id?.toString() || ""
 
-          // PartfieldId: PFD- prefix (4 chars) + incrementing number, max 14 chars
+          // PartfieldId: PFD prefix + incrementing number, max 14 chars
           // Pattern: (PFD|PFD-)([0-9])+
-          const partfieldId = `PFD-${++partfieldCounter}`
+          const partfieldId = `PFD${++partfieldCounter}`
 
           // PartfieldCode: max 32 chars
           const partfieldCode = geoIdStr.substring(0, 32)
