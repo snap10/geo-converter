@@ -33,6 +33,17 @@ export const useGeojsonStore = defineStore("geojson", {
       })
       return Array.from(farms)
     },
+    farmInfo: (state) => {
+      const farmsMap = new Map<string, { id: string; name: string }>()
+      state.geojson.features.forEach(feature => {
+        const farmId = feature.properties?.farmId
+        const farmName = feature.properties?.farmName
+        if (farmId && !farmsMap.has(farmId)) {
+          farmsMap.set(farmId, { id: farmId, name: farmName || farmId })
+        }
+      })
+      return Array.from(farmsMap.values())
+    },
   },
   actions: {
     selectFeature(featureId: string) {

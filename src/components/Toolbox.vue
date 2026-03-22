@@ -60,25 +60,25 @@
           {{ store.selectedCount }} / {{ store.geojson.features.length }} ausgewählt
         </span>
       </div>
-      <div v-if="store.availableFarms.length > 0" class="mb-4 p-3 bg-white rounded-lg shadow-sm">
+      <div v-if="store.farmInfo.length > 0" class="mb-4 p-3 bg-white rounded-lg shadow-sm">
         <div class="text-xs font-medium text-gray-500 uppercase mb-2">Nach Betrieb auswählen:</div>
         <div class="flex flex-wrap gap-2">
           <button
-            v-for="farm in store.availableFarms"
-            :key="farm"
+            v-for="farm in store.farmInfo"
+            :key="farm.id"
             type="button"
             :class="[
               'px-3 py-1 text-sm rounded-full border transition-colors',
-              isFarmFullySelected(farm)
+              isFarmFullySelected(farm.id)
                 ? 'bg-blue-500 text-white border-blue-500'
-                : isFarmPartiallySelected(farm)
+                : isFarmPartiallySelected(farm.id)
                   ? 'bg-blue-100 text-blue-700 border-blue-300'
                   : 'bg-white text-gray-700 border-gray-300 hover:border-gray-400'
             ]"
-            @click="toggleFarmSelection(farm)"
+            @click="toggleFarmSelection(farm.id)"
           >
-            {{ farm }}
-            <span class="ml-1 text-xs opacity-75">({{ getFarmFeatureCount(farm) }})</span>
+            {{ farm.name }}
+            <span class="ml-1 text-xs opacity-75">({{ getFarmFeatureCount(farm.id) }})</span>
           </button>
         </div>
       </div>
