@@ -54,12 +54,12 @@ export const useIsoXmlStore = defineStore("isoxml", {
 
           partfield.boundaryFromGeoJSON(feature.geometry, taskManager)
           
-          const farmId = getOrCreateFarmXmlRef(taskManager, feature.properties?.betriebName)
+          const farmId = getOrCreateFarmXmlRef(taskManager, feature.properties?.betrieb, feature.properties?.betriebName)
           if (farmId) {
             partfield.attributes.FarmIdRef = farmId
           }
           
-          const customerId = getOrCreateCustomerXmlRef(taskManager, feature.properties?.kundenName)
+          const customerId = getOrCreateCustomerXmlRef(taskManager, feature.properties?.kunde, feature.properties?.kundenName)
           if (customerId) {
             partfield.attributes.CustomerIdRef = customerId
           }
@@ -85,9 +85,9 @@ export const useIsoXmlStore = defineStore("isoxml", {
 
       for (const field of partfields) {
         const feature = { type: "Feature" }
-        // Access geometry and properties safely
         const geometry = field.toGeoJSON?.()
         feature.geometry = geometry
+        
         feature.properties = {
           geo_id: field.attributes?.PartfieldCode,
           bez: field.attributes?.PartfieldDesignator,
@@ -106,33 +106,47 @@ export const useIsoXmlStore = defineStore("isoxml", {
   },
 })
 
-function getOrCreateCustomerXmlRef(taskManager: any, name: string | undefined): any {
-  const customerName = name || "unbekannt"
-  const customer = taskManager.rootElement.attributes.Customer?.find(c => c.attributes.CustomerLastName == customerName)
+function getOrCreateCustomerXmlRef(taskManager: any, customerId: string | undefined, customerName: string | undefined): any {
+  if (customerId) {
+    const existingCustomer = taskManager.rootElement.attributes.Customer?.find(c => c.attributes.CustomerId == customerId)
+    if (existingCustomer) {
+      return taskManager.getReferenceByEntity(existingCustomer)
+    }
+  }
+  
+  const name = customerName || "unbekannt"
+  const customer = taskManager.rootElement.attributes.Customer?.find(c => c.attributes.CustomerLastName == name)
   if (customer) {
     return taskManager.getReferenceByEntity(customer)
   }
-  // CustomerId pattern: (CTR|CTR-)([0-9])+, max 14 chars
-  const customerId = `CTR${taskManager.rootElement.attributes.Customer?.length || 1}`
+  
+  const newCustomerId = customerId || `CTR${(taskManager.rootElement.attributes.Customer?.length || 0) + 1}`
   const entity = taskManager.createEntityFromAttributes(isoxmlModule?.TAGS.Customer, {
-    CustomerId: customerId,
-    CustomerLastName: customerName,
+    CustomerId: newCustomerId,
+    CustomerLastName: name,
   })
   taskManager.rootElement.attributes.Customer?.push(entity)
   return taskManager.registerEntity(entity)
 }
 
-function getOrCreateFarmXmlRef(taskManager: any, name: string | undefined): any {
-  const farmName = name || "unbekannt"
-  const farm = taskManager.rootElement.attributes.Farm?.find(c => c.attributes.FarmDesignator == farmName)
+function getOrCreateFarmXmlRef(taskManager: any, farmId: string | undefined, farmName: string | undefined): any {
+  if (farmId) {
+    const existingFarm = taskManager.rootElement.attributes.Farm?.find(f => f.attributes.FarmId == farmId)
+    if (existingFarm) {
+      return taskManager.getReferenceByEntity(existingFarm)
+    }
+  }
+  
+  const name = farmName || "unbekannt"
+  const farm = taskManager.rootElement.attributes.Farm?.find(f => f.attributes.FarmDesignator == name)
   if (farm) {
     return taskManager.getReferenceByEntity(farm)
   }
-  // FarmId pattern: (FRM|FRM-)([0-9])+, max 14 chars
-  const farmId = `FRM${taskManager.rootElement.attributes.Farm?.length || 1}`
+  
+  const newFarmId = farmId || `FRM${(taskManager.rootElement.attributes.Farm?.length || 0) + 1}`
   const entity = taskManager.createEntityFromAttributes(isoxmlModule?.TAGS.Farm, {
-    FarmId: farmId,
-    FarmDesignator: farmName,
+    FarmId: newFarmId,
+    FarmDesignator: name,
   })
   taskManager.rootElement.attributes.Farm?.push(entity)
   return taskManager.registerEntity(entity)
