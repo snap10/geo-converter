@@ -5,7 +5,7 @@
       :zoom="data.zoom"
       :center="data.center"
       :use-global-leaflet="false"
-      @mapready="onMapReady"
+      @ready="onMapReady"
     >
       <l-tile-layer :url="data.url" layer-type="base" name="OpenStreetMap" />
       <l-geo-json :geojson="geojson" :options="data.options" />
@@ -29,7 +29,9 @@ const mapRef = ref(null)
 const geoJsonLayer = ref<LGeoJson | null>(null)
 
 function onMapReady(map: any) {
+  console.log("Map component: Map ready, storing in map store")
   mapStore.setMap(map)
+  console.log("Map component: Map stored in store:", mapStore.map)
 }
 
 // Function to zoom to a feature and show its popup

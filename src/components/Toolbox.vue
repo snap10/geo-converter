@@ -85,12 +85,12 @@
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-200">
-            <tr 
-              v-for="(feature, index) in store.geojson.features" 
-              :key="index"
-              @click="zoomToFeature(feature)"
-              class="cursor-pointer hover:bg-gray-100"
-            >
+<tr 
+   v-for="(feature, index) in store.geojson.features" 
+   :key="index"
+   @click="console.log('Toolbox row clicked:', feature.properties.bez); zoomToFeature(feature)"
+   class="cursor-pointer hover:bg-gray-100"
+>
               <td class="px-6 py-4 whitespace-nowrap">
                 {{ index + 1 }}
               </td>
@@ -221,6 +221,7 @@ function getOperationColor(operation: string | undefined): string {
 
 // Emit an event to zoom to a feature (will be handled by parent component)
 const zoomToFeature = (feature: any) => {
+  console.log("Toolbox: Clicked on feature:", feature.properties.bez || feature.properties.feature_id)
   // Emit custom event that parent can listen to
   const event = new CustomEvent('zoom-to-feature', { 
     detail: { feature } 
