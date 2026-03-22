@@ -1,6 +1,6 @@
 <template>
   <Teleport to="body">
-    <div v-if="isOpen" class="fixed inset-0 z-[100] flex items-center justify-center">
+    <div v-if="isOpen" class="fixed inset-0 flex items-center justify-center" style="z-index: 9999 !important;">
       <div class="absolute inset-0 bg-black bg-opacity-50" @click="$emit('cancel')"></div>
       <div class="relative bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6">
         <h3 class="text-lg font-semibold mb-4">

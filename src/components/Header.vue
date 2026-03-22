@@ -1,5 +1,5 @@
 <template>
-  <div class="flex flex-col h-screen">
+  <div class="flex flex-col h-screen relative isolate">
     <header class="bg-gray-800 text-white py-4 px-8 flex flex-row justify-between shrink-0">
       <h1 class="text-3xl font-bold">
         Geo Converter
