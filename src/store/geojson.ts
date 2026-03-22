@@ -17,12 +17,32 @@ function getColorFromString(str: string): string {
   return FARM_COLORS[Math.abs(hash) % FARM_COLORS.length]
 }
 
+export interface Upload {
+  id: string
+  name: string
+  type: "shapefile" | "isoxml"
+  featureCount: number
+  farmIds: string[]
+  timestamp: Date
+}
+
+export interface PendingDuplicate {
+  existingUpload: Upload
+  newUpload: Upload
+  existingFeatures: { geo_id: string; partfieldDesignator?: string }[]
+  newFeatures: { geo_id: string; partfieldDesignator?: string }[]
+}
+
+export { FARM_COLORS }
+
 export const useGeojsonStore = defineStore("geojson", {
   state: () => ({
     geojson: { type: "FeatureCollection", features: [] },
-    uploadCounter: 0, // Counter to generate unique upload IDs
-    featureIdCounter: 0, // Counter to generate unique feature IDs
-    selectedFeatureIds: new Set<string>(), // Track selected feature IDs
+    uploads: [] as Upload[],
+    uploadCounter: 0,
+    featureIdCounter: 0,
+    selectedFeatureIds: new Set<string>(),
+    pendingDuplicates: [] as PendingDuplicate[],
   }),
   getters: {
     selectedFeatures: (state) => {
@@ -128,17 +148,37 @@ export const useGeojsonStore = defineStore("geojson", {
     },
     async parseShapeToGeoJson(fileContent: any) {
       const geojson = await shp.parseZip(fileContent)
-      // Add upload_id to each feature
       const uploadId = `upload_${++this.uploadCounter}`
       geojson.features.forEach(feature => {
         if (!feature.properties) {
           feature.properties = {}
         }
         feature.properties.upload_id = uploadId
-        // Assign a unique feature id
         feature.properties.feature_id = `feature_${++this.featureIdCounter}`
       })
       this.addFeatures(geojson.features)
+    },
+    async parseShapeToGeoJsonWithResult(fileContent: any): Promise<{ features: any[] } | null> {
+      try {
+        const geojson = await shp.parseZip(fileContent)
+        geojson.features.forEach(feature => {
+          if (!feature.properties) {
+            feature.properties = {}
+          }
+        })
+        return geojson
+      } catch (error) {
+        console.error("Error parsing shapefile:", error)
+        return null
+      }
+    },
+
+    addShapeFeatures(features: any[], uploadId: string) {
+      features.forEach(feature => {
+        feature.properties.upload_id = uploadId
+        feature.properties.feature_id = `feature_${++this.featureIdCounter}`
+      })
+      this.addFeatures(features)
     },
     addFeatures(features: any[]) {
       // Assign a unique feature id to each feature if it doesn't have one
@@ -186,6 +226,92 @@ export const useGeojsonStore = defineStore("geojson", {
     },
     getFeatureById(featureId: string) {
       return this.geojson.features.find(f => f.properties?.feature_id === featureId)
+    },
+    addUpload(name: string, type: "shapefile" | "isoxml", featureCount: number, farmIds: string[]): string {
+      const id = `upload_${++this.uploadCounter}`
+      this.uploads.push({
+        id,
+        name,
+        type,
+        featureCount,
+        farmIds,
+        timestamp: new Date()
+      })
+      return id
+    },
+    removeUpload(uploadId: string) {
+      const featureIdsToRemove = new Set<string>()
+      this.geojson.features.forEach(feature => {
+        if (feature.properties?.upload_id === uploadId) {
+          featureIdsToRemove.add(feature.properties.feature_id)
+        }
+      })
+      this.geojson.features = this.geojson.features.filter(
+        feature => feature.properties?.upload_id !== uploadId
+      )
+      featureIdsToRemove.forEach(id => this.selectedFeatureIds.delete(id))
+      this.uploads = this.uploads.filter(u => u.id !== uploadId)
+      return featureIdsToRemove.size
+    },
+    getFeaturesByUploadId(uploadId: string) {
+      return this.geojson.features.filter(f => f.properties?.upload_id === uploadId)
+    },
+    getUploadById(uploadId: string) {
+      return this.uploads.find(u => u.id === uploadId)
+    },
+    getDuplicateGeoIds(newGeoIds: string[]): string[] {
+      const existingGeoIds = new Set<string>()
+      this.geojson.features.forEach(f => {
+        if (f.properties?.geo_id) {
+          existingGeoIds.add(f.properties.geo_id)
+        }
+      })
+      return newGeoIds.filter(id => existingGeoIds.has(id))
+    },
+    hasPendingDuplicates(): boolean {
+      return this.pendingDuplicates.length > 0
+    },
+    addPendingDuplicate(existingUpload: Upload, newUpload: Upload, existingFeatures: { geo_id: string; partfieldDesignator?: string }[], newFeatures: { geo_id: string; partfieldDesignator?: string }[]) {
+      this.pendingDuplicates.push({ existingUpload, newUpload, existingFeatures, newFeatures })
+    },
+    resolveDuplicate(index: number, action: "keep_existing" | "keep_new" | "keep_both") {
+      if (index < 0 || index >= this.pendingDuplicates.length) return
+      
+      const duplicate = this.pendingDuplicates[index]
+      const duplicateGeoIds = duplicate.newFeatures.map(f => f.geo_id)
+      
+      if (action === "keep_existing") {
+        this.geojson.features = this.geojson.features.filter(
+          f => f.properties?.upload_id !== duplicate.newUpload.id
+        )
+        this.uploads = this.uploads.filter(u => u.id !== duplicate.newUpload.id)
+      } else if (action === "keep_new") {
+        this.geojson.features = this.geojson.features.filter(
+          f => f.properties?.upload_id !== duplicate.existingUpload.id
+        )
+        this.uploads = this.uploads.filter(u => u.id !== duplicate.existingUpload.id)
+      } else if (action === "keep_both") {
+        this.geojson.features.forEach(feature => {
+          if (feature.properties?.upload_id === duplicate.newUpload.id) {
+            const geoId = feature.properties?.geo_id
+            if (geoId && duplicateGeoIds.includes(geoId)) {
+              feature.properties.geo_id = `${geoId}_copy`
+            }
+          }
+        })
+        duplicate.newUpload.farmIds = duplicate.newUpload.farmIds.map(id => 
+          duplicateGeoIds.includes(id) ? `${id}_copy` : id
+        )
+      }
+      this.pendingDuplicates.splice(index, 1)
+    },
+    clearAllData() {
+      this.geojson = { type: "FeatureCollection", features: [] }
+      this.uploads = []
+      this.selectedFeatureIds.clear()
+      this.pendingDuplicates = []
+      this.uploadCounter = 0
+      this.featureIdCounter = 0
     },
   },
 })

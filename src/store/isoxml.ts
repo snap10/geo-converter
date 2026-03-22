@@ -130,6 +130,63 @@ export const useIsoXmlStore = defineStore("isoxml", {
       useGeojsonStore().addFeatures(featureCollection.features)
       return featureCollection
     },
+
+    async parseAsGeoJsonWithResult(content: Uint8Array | string, type: string) {
+      const isoxml = await getIsoxmlModule()
+      const taskManager = new isoxml.ISOXMLManager()
+      await taskManager.parseISOXMLFile(content, type as any)
+      const partfields = taskManager.rootElement.attributes.Partfield
+      const featureCollection = { type: "FeatureCollection", features: [] }
+
+      const customers = taskManager.rootElement.attributes.Customer || []
+      const farms = taskManager.rootElement.attributes.Farm || []
+
+      for (const field of partfields) {
+        const feature = { type: "Feature" }
+        const geometry = field.toGeoJSON?.()
+        feature.geometry = geometry
+
+        const customerRef = field.attributes.CustomerIdRef
+        const farmRef = field.attributes.FarmIdRef
+
+        const customerEntity = customerRef?.entity || customers.find(c => c.attributes.CustomerId === customerRef?.xmlId)
+        const farmEntity = farmRef?.entity || farms.find(f => f.attributes.FarmId === farmRef?.xmlId)
+        let customerName = customerEntity?.attributes?.CustomerLastName || customerEntity?.attributes?.CustomerName
+        let farmName = farmEntity?.attributes?.FarmDesignator || farmEntity?.attributes?.FarmName
+
+        if (customerName === "undefined" || !customerName) {
+          customerName = customerRef?.xmlId
+        }
+        if (farmName === "undefined" || !farmName) {
+          farmName = farmRef?.xmlId
+        }
+
+        feature.properties = {
+          geo_id: field.attributes?.PartfieldCode,
+          partfieldDesignator: field.attributes?.PartfieldDesignator,
+          partfieldArea: field.attributes?.PartfieldArea ? parseFloat(field.attributes.PartfieldArea) / 10000 : undefined,
+          customerId: customerRef?.xmlId,
+          customerName: customerName || customerRef?.xmlId,
+          farmId: farmRef?.xmlId,
+          farmName: farmName || farmRef?.xmlId,
+        }
+        featureCollection.features.push(feature)
+      }
+
+      return featureCollection
+    },
+
+    addIsoXmlFeatures(features: any[], uploadId: string, startFeatureId: number) {
+      const geojsonStore = useGeojsonStore()
+      features.forEach(feature => {
+        if (!feature.properties) {
+          feature.properties = {}
+        }
+        feature.properties.upload_id = uploadId
+        feature.properties.feature_id = `feature_${++startFeatureId}`
+      })
+      geojsonStore.addFeatures(features)
+    },
   },
 })
 

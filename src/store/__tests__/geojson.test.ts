@@ -301,4 +301,259 @@ describe("useGeojsonStore", () => {
       expect(feature?.properties?.partfieldDesignator).toBe("Field2")
     })
   })
+
+  describe("upload management", () => {
+    it("should add an upload", () => {
+      const store = useGeojsonStore()
+      
+      const uploadId = store.addUpload("test.zip", "shapefile", 10, ["FRM1", "FRM2"])
+      
+      expect(uploadId).toBe("upload_1")
+      expect(store.uploads).toHaveLength(1)
+      expect(store.uploads[0].name).toBe("test.zip")
+      expect(store.uploads[0].type).toBe("shapefile")
+      expect(store.uploads[0].featureCount).toBe(10)
+      expect(store.uploads[0].farmIds).toEqual(["FRM1", "FRM2"])
+    })
+
+    it("should track multiple uploads with incrementing ids", () => {
+      const store = useGeojsonStore()
+      
+      store.addUpload("file1.zip", "isoxml", 5, ["A"])
+      store.addUpload("file2.zip", "shapefile", 10, ["B"])
+      store.addUpload("file3.zip", "isoxml", 15, ["C"])
+      
+      expect(store.uploads).toHaveLength(3)
+      expect(store.uploads[0].id).toBe("upload_1")
+      expect(store.uploads[1].id).toBe("upload_2")
+      expect(store.uploads[2].id).toBe("upload_3")
+    })
+
+    it("should get upload by id", () => {
+      const store = useGeojsonStore()
+      
+      store.addUpload("test.zip", "shapefile", 10, ["FRM1"])
+      const upload = store.getUploadById("upload_1")
+      
+      expect(upload).toBeDefined()
+      expect(upload?.name).toBe("test.zip")
+    })
+
+    it("should return undefined for non-existent upload id", () => {
+      const store = useGeojsonStore()
+      
+      const upload = store.getUploadById("non_existent")
+      
+      expect(upload).toBeUndefined()
+    })
+
+    it("should remove upload and its features", () => {
+      const store = useGeojsonStore()
+      
+      store.addFeatures([
+        { type: "Feature", geometry: {}, properties: { upload_id: "upload_1", geo_id: "F1" } },
+        { type: "Feature", geometry: {}, properties: { upload_id: "upload_1", geo_id: "F2" } },
+        { type: "Feature", geometry: {}, properties: { upload_id: "upload_2", geo_id: "F3" } }
+      ])
+      
+      store.addUpload("test.zip", "shapefile", 2, ["F1", "F2"])
+      store.addUpload("test2.zip", "isoxml", 1, ["F3"])
+      
+      const removedCount = store.removeUpload("upload_1")
+      
+      expect(removedCount).toBe(2)
+      expect(store.geojson.features).toHaveLength(1)
+      expect(store.geojson.features[0].properties.geo_id).toBe("F3")
+      expect(store.uploads).toHaveLength(1)
+      expect(store.uploads[0].id).toBe("upload_2")
+    })
+
+    it("should get features by upload id", () => {
+      const store = useGeojsonStore()
+      
+      store.addFeatures([
+        { type: "Feature", geometry: {}, properties: { upload_id: "upload_1", geo_id: "F1" } },
+        { type: "Feature", geometry: {}, properties: { upload_id: "upload_1", geo_id: "F2" } },
+        { type: "Feature", geometry: {}, properties: { upload_id: "upload_2", geo_id: "F3" } }
+      ])
+      
+      const features = store.getFeaturesByUploadId("upload_1")
+      
+      expect(features).toHaveLength(2)
+    })
+  })
+
+  describe("duplicate detection", () => {
+    it("should detect duplicate geo_ids", () => {
+      const store = useGeojsonStore()
+      
+      store.addFeatures([
+        { type: "Feature", geometry: {}, properties: { geo_id: "F1" } },
+        { type: "Feature", geometry: {}, properties: { geo_id: "F2" } },
+        { type: "Feature", geometry: {}, properties: { geo_id: "F3" } }
+      ])
+      
+      const duplicates = store.getDuplicateGeoIds(["F1", "F4", "F5"])
+      
+      expect(duplicates).toEqual(["F1"])
+    })
+
+    it("should return empty array when no duplicates", () => {
+      const store = useGeojsonStore()
+      
+      store.addFeatures([
+        { type: "Feature", geometry: {}, properties: { geo_id: "F1" } }
+      ])
+      
+      const duplicates = store.getDuplicateGeoIds(["F2", "F3"])
+      
+      expect(duplicates).toEqual([])
+    })
+
+    it("should return empty array when no existing features", () => {
+      const store = useGeojsonStore()
+      
+      const duplicates = store.getDuplicateGeoIds(["F1", "F2"])
+      
+      expect(duplicates).toEqual([])
+    })
+  })
+
+  describe("pending duplicates", () => {
+    it("should add pending duplicate", () => {
+      const store = useGeojsonStore()
+      
+      const existingUpload = {
+        id: "upload_1",
+        name: "existing.zip",
+        type: "shapefile" as const,
+        featureCount: 5,
+        farmIds: ["F1"],
+        timestamp: new Date()
+      }
+      const newUpload = {
+        id: "upload_2",
+        name: "new.zip",
+        type: "isoxml" as const,
+        featureCount: 5,
+        farmIds: ["F1"],
+        timestamp: new Date()
+      }
+      
+      store.addPendingDuplicate(
+        existingUpload,
+        newUpload,
+        [{ geo_id: "F1", partfieldDesignator: "Field 1" }],
+        [{ geo_id: "F1", partfieldDesignator: "Field 1 Copy" }]
+      )
+      
+      expect(store.pendingDuplicates).toHaveLength(1)
+      expect(store.hasPendingDuplicates()).toBe(true)
+    })
+
+    it("should resolve duplicate with keep_existing", () => {
+      const store = useGeojsonStore()
+      
+      store.addFeatures([
+        { type: "Feature", geometry: {}, properties: { upload_id: "upload_1", geo_id: "F1" } },
+        { type: "Feature", geometry: {}, properties: { upload_id: "upload_2", geo_id: "F1" } }
+      ])
+      store.addUpload("existing.zip", "shapefile", 1, ["F1"])
+      store.addUpload("new.zip", "isoxml", 1, ["F1"])
+      
+      const existingUpload = store.uploads[0]
+      const newUpload = store.uploads[1]
+      
+      store.addPendingDuplicate(
+        existingUpload,
+        newUpload,
+        [{ geo_id: "F1" }],
+        [{ geo_id: "F1" }]
+      )
+      
+      store.resolveDuplicate(0, "keep_existing")
+      
+      expect(store.geojson.features).toHaveLength(1)
+      expect(store.geojson.features[0].properties.upload_id).toBe("upload_1")
+      expect(store.pendingDuplicates).toHaveLength(0)
+    })
+
+    it("should resolve duplicate with keep_new", () => {
+      const store = useGeojsonStore()
+      
+      store.addFeatures([
+        { type: "Feature", geometry: {}, properties: { upload_id: "upload_1", geo_id: "F1" } },
+        { type: "Feature", geometry: {}, properties: { upload_id: "upload_2", geo_id: "F1" } }
+      ])
+      store.addUpload("existing.zip", "shapefile", 1, ["F1"])
+      store.addUpload("new.zip", "isoxml", 1, ["F1"])
+      
+      const existingUpload = store.uploads[0]
+      const newUpload = store.uploads[1]
+      
+      store.addPendingDuplicate(
+        existingUpload,
+        newUpload,
+        [{ geo_id: "F1" }],
+        [{ geo_id: "F1" }]
+      )
+      
+      store.resolveDuplicate(0, "keep_new")
+      
+      expect(store.geojson.features).toHaveLength(1)
+      expect(store.geojson.features[0].properties.upload_id).toBe("upload_2")
+      expect(store.pendingDuplicates).toHaveLength(0)
+    })
+
+    it("should resolve duplicate with keep_both and rename geo_ids", () => {
+      const store = useGeojsonStore()
+      
+      store.addFeatures([
+        { type: "Feature", geometry: {}, properties: { upload_id: "upload_1", geo_id: "F1" } },
+        { type: "Feature", geometry: {}, properties: { upload_id: "upload_2", geo_id: "F1" } }
+      ])
+      store.addUpload("existing.zip", "shapefile", 1, ["F1"])
+      store.addUpload("new.zip", "isoxml", 1, ["F1"])
+      
+      const existingUpload = store.uploads[0]
+      const newUpload = store.uploads[1]
+      
+      store.addPendingDuplicate(
+        existingUpload,
+        newUpload,
+        [{ geo_id: "F1" }],
+        [{ geo_id: "F1" }]
+      )
+      
+      store.resolveDuplicate(0, "keep_both")
+      
+      expect(store.geojson.features).toHaveLength(2)
+      const newFeature = store.geojson.features.find(f => f.properties.upload_id === "upload_2")
+      expect(newFeature?.properties.geo_id).toBe("F1_copy")
+      expect(store.pendingDuplicates).toHaveLength(0)
+    })
+  })
+
+  describe("clear all data", () => {
+    it("should clear all state", () => {
+      const store = useGeojsonStore()
+      
+      store.addFeatures([{ type: "Feature", geometry: {}, properties: {} }])
+      store.addUpload("test.zip", "shapefile", 1, ["F1"])
+      store.addPendingDuplicate(
+        { id: "u1", name: "e", type: "shapefile", featureCount: 1, farmIds: [], timestamp: new Date() },
+        { id: "u2", name: "n", type: "isoxml", featureCount: 1, farmIds: [], timestamp: new Date() },
+        [],
+        []
+      )
+      
+      store.clearAllData()
+      
+      expect(store.geojson.features).toHaveLength(0)
+      expect(store.uploads).toHaveLength(0)
+      expect(store.pendingDuplicates).toHaveLength(0)
+      expect(store.uploadCounter).toBe(0)
+      expect(store.featureIdCounter).toBe(0)
+    })
+  })
 })
