@@ -60,3 +60,16 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - [Vite](https://vitejs.dev/) - The build tool used for the development and production builds
 - [ShpJS](https://github.com/calvinmetcalf/shapefile-js) - The library used for parsing Shapefiles
 - [Isoxml-js](https://github.com/progis-ags/isoxml-js) - The library used for generating ISOXML Taskdata
+
+### Open Source Credits
+
+This project uses the following open-source libraries:
+
+| Library | License | Repository |
+|---------|---------|------------|
+| [isoxml-js](https://github.com/progis-ags/isoxml-js) | Apache-2.0 | Agricultural data exchange format |
+| [Leaflet](https://leafletjs.com/) | BSD-2-Clause | Interactive maps |
+| [Vue.js](https://vuejs.org/) | MIT | UI framework |
+| [shpjs](https://github.com/calvinmetcalf/shapefile-js) | MIT | Shapefile parsing |
+
+Full license texts are available at the respective project repositories.
