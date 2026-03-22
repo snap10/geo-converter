@@ -352,7 +352,6 @@ const loadShapeZipFile = function() {
   console.log("file", f)
   if (f) {
     const fileName = f.name
-    shapefileImportFileName.value = fileName
     const reader = new FileReader()
     reader.readAsArrayBuffer(f)
     reader.onload = async (event) => {
