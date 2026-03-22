@@ -1,5 +1,5 @@
 <template>
-  <aside class="bg-gray-200 w-1/3 py-4 px-8 overflow-y-scroll h-screen">
+  <aside class="bg-gray-200 w-1/3 py-4 px-8 overflow-y-scroll">
     <h2 class="text-2xl font-bold mb-4">
       Toolbox
     </h2>
