@@ -266,5 +266,33 @@ describe("useGeojsonStore", () => {
       
       expect(store.availableFarms).toEqual(["FRM1", "FRM2"])
     })
+
+    it("should update feature properties", () => {
+      const store = useGeojsonStore()
+      
+      store.addFeatures([
+        { type: "Feature", geometry: {}, properties: { partfieldDesignator: "Field1", partfieldArea: 10 } }
+      ])
+      
+      const featureId = store.geojson.features[0].properties.feature_id
+      store.updateFeature(featureId, { partfieldDesignator: "Updated Field", partfieldArea: 20 })
+      
+      expect(store.geojson.features[0].properties.partfieldDesignator).toBe("Updated Field")
+      expect(store.geojson.features[0].properties.partfieldArea).toBe(20)
+    })
+
+    it("should get feature by id", () => {
+      const store = useGeojsonStore()
+      
+      store.addFeatures([
+        { type: "Feature", geometry: {}, properties: { partfieldDesignator: "Field1" } },
+        { type: "Feature", geometry: {}, properties: { partfieldDesignator: "Field2" } }
+      ])
+      
+      const featureId = store.geojson.features[1].properties.feature_id
+      const feature = store.getFeatureById(featureId)
+      
+      expect(feature?.properties?.partfieldDesignator).toBe("Field2")
+    })
   })
 })

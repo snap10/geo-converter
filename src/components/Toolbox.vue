@@ -132,6 +132,7 @@
                 isSelected(feature.properties?.feature_id) ? 'bg-blue-100' : ''
               ]"
               @click="handleRowClick(feature, $event)"
+              @dblclick="openEditDialog(feature)"
             >
               <td class="px-4 py-4 whitespace-nowrap" @click.stop>
                 <input
@@ -177,6 +178,12 @@
         </table>
       </div>
     </div>
+    <FeatureEditDialog
+      :is-open="showEditDialog"
+      :feature="editingFeature"
+      @save="handleFeatureSave"
+      @cancel="showEditDialog = false"
+    />
   </aside>
 </template>
 
@@ -184,11 +191,14 @@
 import { useGeojsonStore } from "@/store/geojson"
 import { useIsoXmlStore } from "@/store/isoxml"
 import { ref } from "vue"
+import FeatureEditDialog from "./FeatureEditDialog.vue"
 
 const shapeFileInput = ref(null)
 const store = useGeojsonStore()
 const isoxmlStore = useIsoXmlStore()
 const showFarmDropdown = ref(false)
+const showEditDialog = ref(false)
+const editingFeature = ref<any>(null)
 
 const loadShapeZipFile = function() {
   console.log("fileInput", shapeFileInput)
@@ -297,5 +307,16 @@ function handleRowClick(feature: any, event: MouseEvent) {
     detail: { feature } 
   })
   document.dispatchEvent(evt)
+}
+
+function openEditDialog(feature: any) {
+  editingFeature.value = feature
+  showEditDialog.value = true
+}
+
+function handleFeatureSave(featureId: string, properties: Record<string, any>) {
+  store.updateFeature(featureId, properties)
+  showEditDialog.value = false
+  editingFeature.value = null
 }
 </script>

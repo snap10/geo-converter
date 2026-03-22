@@ -130,5 +130,19 @@ export const useGeojsonStore = defineStore("geojson", {
       })
       this.geojson = geojson
     },
+    updateFeature(featureId: string, properties: Record<string, any>) {
+      const featureIndex = this.geojson.features.findIndex(
+        f => f.properties?.feature_id === featureId
+      )
+      if (featureIndex !== -1) {
+        this.geojson.features[featureIndex].properties = {
+          ...this.geojson.features[featureIndex].properties,
+          ...properties
+        }
+      }
+    },
+    getFeatureById(featureId: string) {
+      return this.geojson.features.find(f => f.properties?.feature_id === featureId)
+    },
   },
 })
